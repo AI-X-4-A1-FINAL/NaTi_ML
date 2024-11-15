@@ -8,8 +8,13 @@
 
 ## 🗝️ 프로젝트 소개
 
-`Narrativa_ML`은 AI 기반 스토리 생성 플랫폼인 Narrativa 프로젝트의 AI API 모듈입니다.<br />
+`Narrativa ML`은 AI 기반 스토리 생성 플랫폼인 Narrativa 프로젝트의 AI API 모듈입니다. <br />
+사용자의 입력을 기반으로 이야기, 이미지, 음악을 생성하는 통합 AI 시스템을 구현합니다.
 
+### 주요 기능
+- 텍스트 기반 스토리 생성
+- 스토리 기반 이미지 생성
+- 분위기에 맞는 배경음악 생성
 
 ## 🗝️ 설치 가이드
 
@@ -17,18 +22,32 @@ Narrativa_ML 프로젝트를 로컬 환경에서 클론하고, 빌드 및 실행
 
 ### 1. 프로젝트 클론
 ```bash
-git clone https://github.com/AI-X-4-A1-FINAL/Narrativa_ML.git
-cd narrativa-ml
+$ git clone https://github.com/AI-X-4-A1-FINAL/Narrativa_ML.git
+$ cd narrativa-ml
 ```
 
-### 2. 빌드 및 설치
+### 2. 환경 설정
+> PyTorch 및 기타 의존성 설치를 위해 Miniconda를 사용합니다. 아직 Conda를 설치하지 않았다면, 아래 링크에서 다운로드하여 설치하세요.
++ [Miniconda 다운로드](https://conda-forge.org/download/)
 ```bash
-코드추가 예정
+# Python 3.12 버전의 가상환경 생성
+$ conda create -n narrativa_ml python=3.12
+
+# 가상환경 활성화
+$ conda activate narrativa_ml
+
+# PyTorch 설치
+$ conda install pytorch torchvision torchaudio pytorch-cuda=12.4 -c pytorch -c nvidia
+
+# 의존성 설치
+$ pip install -r requirements.txt
 ```
 
 ### 3. 실행
 ```bash
-코드추가 예정
+$ uvicorn main:app --reload
+
+# http://localhost:8000
 ```
 
 ## 🗝️ 브랜치 관리 규칙
@@ -86,8 +105,8 @@ git checkout -b hotfix/critical-bug
 - 소문자 및 케밥 케이스 사용
 - 복수형 리소스 명사 사용
 - 예시:
-    - `/users/{userId}`
-    - `/games/{gameId}/sessions`
+    - `/users/{user-id}`
+    - `/games/{game-id}/sessions`
 
 ### 파라미터 규칙
 - 쿼리: 카멜 케이스
@@ -98,53 +117,72 @@ git checkout -b hotfix/critical-bug
 ## 🗝️ 디렉토리 구조
 
 ```bash
-구조추가
+narrativa-ml/
+├── api/
+│   ├── routes/
+│   │   ├── story.py
+│   │   ├── image.py
+│   │   └── music.py
+│   └── dependencies.py
+├── core/
+│   ├── config.py
+│   └── security.py
+├── models/
+│   ├── story_generator.py
+│   ├── image_generator.py
+│   └── music_generator.py
+├── tests/
+│   └── test_api.py
+├── main.py
+└── requirements.txt
 ```
 
 ## 🗝️ 팀 정보
 
 ### **Team Member**
   <br />
-  <img src="https://github.com/user-attachments/assets/bb285012-1e08-4bd7-9c63-d6f73c80f713" 
-       alt="st" 
-       width="200" 
-       height="auto" 
-       style="max-width: 100%; height: auto;">
-  <img src="https://github.com/user-attachments/assets/6e4a6035-db22-414a-b051-b59fd646d9cd" 
-       alt="hs" 
-       width="200" 
-       height="auto" 
-       style="max-width: 100%; height: auto;">
-  <img src="https://github.com/user-attachments/assets/b07709bc-bd82-4401-a5cd-9177e4ee44e6" 
-       alt="hy" 
-       width="200" 
-       height="auto" 
-       style="max-width: 100%; height: auto;">
-  <img src="https://github.com/user-attachments/assets/6a1bbf66-b4d6-40b2-afc9-113e37d78884" 
-       alt="js" 
-       width="200" 
-       height="auto" 
-       style="max-width: 100%; height: auto;">
-<a href="https://github.com/shaneee123" target="_blank">
-  <img src="https://github.com/user-attachments/assets/6ec7ec21-a9b1-4ebe-932f-c78064dcabe7" 
-       alt="se" 
-       width="200" 
-       height="auto" 
-       style="max-width: 100%; height: auto;">
-</a>
-<a href="https://github.com/Yesssung" target="_blank">
-  <img src="https://github.com/user-attachments/assets/2ce88918-3e99-4dba-97c1-ef54d0cd4d48" 
-       alt="ys" 
-       width="200" 
-       height="auto" 
-       style="max-width: 100%; height: auto;">
-</a>
+<img src="https://github.com/user-attachments/assets/bb285012-1e08-4bd7-9c63-d6f73c80f713" 
+    alt="st" 
+    width="200" 
+    height="auto" 
+    style="max-width: 100%; height: auto;">
+<img src="https://github.com/user-attachments/assets/6e4a6035-db22-414a-b051-b59fd646d9cd" 
+    alt="hs" 
+    width="200" 
+    height="auto" 
+    style="max-width: 100%; height: auto;">
+<img src="https://github.com/user-attachments/assets/b07709bc-bd82-4401-a5cd-9177e4ee44e6" 
+    alt="hy" 
+    width="200" 
+    height="auto" 
+    style="max-width: 100%; height: auto;">
+
+<br />
+
+<img src="https://github.com/user-attachments/assets/6a1bbf66-b4d6-40b2-afc9-113e37d78884" 
+    alt="js" 
+    width="200" 
+    height="auto" 
+    style="max-width: 100%; height: auto;">
+<img src="https://github.com/user-attachments/assets/6ec7ec21-a9b1-4ebe-932f-c78064dcabe7" 
+    alt="se" 
+    width="200" 
+    height="auto" 
+    style="max-width: 100%; height: auto;">
+<img src="https://github.com/user-attachments/assets/2ce88918-3e99-4dba-97c1-ef54d0cd4d48" 
+    alt="ys" 
+    width="200" 
+    height="auto" 
+    style="max-width: 100%; height: auto;">
 
 ## 🗝️ 문의 및 기여
 
 프로젝트에 대한 문의사항이나 개선 제안은 이슈 탭에 등록해주세요.<br />
 기여를 원하시는 분은 Fork & Pull Request를 통해 참여해주시면 감사하겠습니다.
 
+## 🗝️ 라이선스
+
+이 프로젝트는 [MIT 라이선스](LICENSE)를 따릅니다.
 
 <br /><br />
 ![footer](https://github.com/user-attachments/assets/c30abbd9-8e89-4a4e-8823-33fe0cf843c9)
