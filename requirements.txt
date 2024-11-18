@@ -1,4 +1,12 @@
-fastapi[standard]
-uvicorn
+fastapi
+uvicorn[standard]
+pydantic
+requests
+python-dotenv
+aiohttp
+torch
 transformers
-numpy
+PILLOW
+scikit-learn
+pytest
+sqlalchemy
