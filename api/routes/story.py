@@ -14,7 +14,7 @@ class StoryRequest(BaseModel):
 router = APIRouter()
 
 # 게임 시작 엔드포인트
-@router.post("/start-game", response_model=dict)
+@router.post("/start-lovestory", response_model=dict)
 async def start_game_endpoint(request: StartGameRequest):
     try:
         # 모델에서 게임 시작
@@ -24,7 +24,7 @@ async def start_game_endpoint(request: StartGameRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 # 스토리 생성 엔드포인트
-@router.post("/generate-story", response_model=dict)
+@router.post("/generate-lovestory", response_model=dict)
 async def generate_story_endpoint(request: StoryRequest):
     try:
         # 모델에서 스토리 생성
