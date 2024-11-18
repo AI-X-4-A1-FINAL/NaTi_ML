@@ -33,9 +33,21 @@ jobs:
         run: |
           $dockerHubUsername = "${{ secrets.DOCKERHUB_USERNAME }}"
           $dockerImageName = "$dockerHubUsername/$env:DOCKER_IMAGE_NAME:latest"
-
-          Write-Host "Building Docker Image: $dockerImageName"
           
+          Write-Host "DockerHub Username: $dockerHubUsername"
+          Write-Host "Docker Image Name: $dockerImageName"
+          
+          # 유효성 검사
+          if (-not $dockerHubUsername) {
+              Write-Error "DOCKERHUB_USERNAME is not set"
+              exit 1
+          }
+
+          if (-not $env:DOCKER_IMAGE_NAME) {
+              Write-Error "DOCKER_IMAGE_NAME is not set"
+              exit 1
+          }
+
           # Docker 빌드 및 푸시
           docker build -t $dockerImageName .
           docker push $dockerImageName
