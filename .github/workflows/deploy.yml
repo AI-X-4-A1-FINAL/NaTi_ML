@@ -27,9 +27,9 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      # 3. PowerShell Core(pwsh)를 사용하여 Docker 이미지 빌드 및 푸시
+      # 3. Docker 이미지 빌드 및 푸시
       - name: Build and Push Docker Image
-        shell: pwsh  # 여기서 shell을 pwsh로 변경
+        shell: pwsh
         run: |
           $dockerHubUsername = "${{ secrets.DOCKERHUB_USERNAME }}"
           $dockerImageName = "$dockerHubUsername/$($env:DOCKER_IMAGE_NAME):latest"
@@ -52,15 +52,26 @@ jobs:
           docker build -t $dockerImageName .
           docker push $dockerImageName
 
-      # 4. SSH를 사용하여 원격 서버에 배포
+      # 4. SSH를 사용하여 원격 서버에 배포 및 방화벽 설정
       - name: Deploy to Remote Server
-        uses: appleboy/ssh-action@master  # JavaScript로 구현된 최신 버전 사용
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ env.SERVER_IP }}
           username: ${{ env.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ env.SERVER_PORT }}
           script: |
+            # ufw가 설치되어 있는지 확인하고 포트 열기
+            if command -v ufw >/dev/null 2>&1; then
+              echo "Configuring firewall..."
+              sudo ufw allow 22
+              sudo ufw allow 8050
+              sudo ufw reload
+            else
+              echo "UFW not installed, skipping firewall configuration"
+            fi
+
+            # Docker 컨테이너 배포
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/$($env:DOCKER_IMAGE_NAME):latest
             docker stop $DOCKER_CONTAINER_NAME || true
             docker rm $DOCKER_CONTAINER_NAME || true
