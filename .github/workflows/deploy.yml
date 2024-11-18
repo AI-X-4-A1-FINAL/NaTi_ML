@@ -27,7 +27,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      # 3. Build and Push Docker Image using Buildx (PowerShell 수정)
+      # 3. Build and Push Docker Image using Buildx
       - name: Build and push Docker image
         shell: powershell
         run: |
@@ -38,6 +38,8 @@ jobs:
           }
           docker buildx use mybuilder
           docker buildx inspect --bootstrap
+          
+          # Docker 이미지 빌드 및 푸시 (빌드 컨텍스트 명시적으로 추가)
           docker buildx build --platform linux/amd64 -t $env:DOCKER_IMAGE_NAME:latest . --push
 
       # 4. Deploy to Remote Server using SSH
