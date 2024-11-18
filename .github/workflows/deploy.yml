@@ -16,22 +16,27 @@ jobs:
       SERVER_PORT: 22
 
     steps:
+      # 1. Git Repository Checkout
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 2. Log in to DockerHub
       - name: Log in to DockerHub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - name: Build Docker Image (without buildx)
-        shell: powershell
+      # 3. Build Docker Image
+      - name: Build Docker Image
+        shell: pwsh
         run: |
-          docker build -t $env:DOCKER_IMAGE_NAME:latest .
-          docker tag $env:DOCKER_IMAGE_NAME:latest ${{ secrets.DOCKERHUB_USERNAME }}/$env:DOCKER_IMAGE_NAME:latest
+          $imageName = "${{ secrets.DOCKERHUB_USERNAME }}/$env:DOCKER_IMAGE_NAME:latest"
+          docker build -t $imageName .
+          docker tag $imageName ${{ secrets.DOCKERHUB_USERNAME }}/$env:DOCKER_IMAGE_NAME:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/$env:DOCKER_IMAGE_NAME:latest
 
+      # 4. Deploy to Remote Server using SSH
       - name: Deploy to Remote Server
         uses: appleboy/ssh-action@v0.1.8
         with:
@@ -40,7 +45,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ env.SERVER_PORT }}
           script: |
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/$DOCKER_IMAGE_NAME:latest
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/$env:DOCKER_IMAGE_NAME:latest
             docker stop $DOCKER_CONTAINER_NAME || true
             docker rm $DOCKER_CONTAINER_NAME || true
-            docker run -d --name $DOCKER_CONTAINER_NAME -p 8050:8050 ${{ secrets.DOCKERHUB_USERNAME }}/$DOCKER_IMAGE_NAME:latest
+            docker run -d --name $DOCKER_CONTAINER_NAME -p 8050:8050 ${{ secrets.DOCKERHUB_USERNAME }}/$env:DOCKER_IMAGE_NAME:latest
