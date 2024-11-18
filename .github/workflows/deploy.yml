@@ -7,13 +7,13 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, linux]  # self-hosted Linux 러너 사용
+    runs-on: ubuntu-latest  # GitHub 호스팅 Linux 러너 사용
     env:
       DOCKER_IMAGE_NAME: narrativa_ml
       DOCKER_CONTAINER_NAME: narrativa_ml
-      SERVER_IP: 192.168.0.204
+      SERVER_IP: 221.148.97.238
       SERVER_USER: narrativa
-      SERVER_PORT: 22
+      SERVER_PORT: 8050
 
     steps:
       # 1. Git 저장소 체크아웃
@@ -29,7 +29,7 @@ jobs:
 
       # 3. PowerShell Core(pwsh)를 사용하여 Docker 이미지 빌드 및 푸시
       - name: Build and Push Docker Image
-        shell: pwsh
+        shell: pwsh  # 여기서 shell을 pwsh로 변경
         run: |
           $dockerHubUsername = "${{ secrets.DOCKERHUB_USERNAME }}"
           $dockerImageName = "$dockerHubUsername/$($env:DOCKER_IMAGE_NAME):latest"
@@ -54,7 +54,7 @@ jobs:
 
       # 4. SSH를 사용하여 원격 서버에 배포
       - name: Deploy to Remote Server
-        uses: appleboy/ssh-action@v0.1.8  # 필요에 따라 버전 선택
+        uses: appleboy/ssh-action@master  # JavaScript로 구현된 최신 버전 사용
         with:
           host: ${{ env.SERVER_IP }}
           username: ${{ env.SERVER_USER }}
