@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest  # GitHub 호스팅 Linux 러너 사용
+    runs-on: ubuntu-latest
     env:
       DOCKER_IMAGE_NAME: narrativa_ml
       DOCKER_CONTAINER_NAME: narrativa_ml
@@ -29,7 +29,7 @@ jobs:
 
       # 3. PowerShell을 사용하여 Docker 이미지 빌드 및 푸시
       - name: Build and Push Docker Image
-        shell: powershell
+        shell: pwsh
         run: |
           $dockerHubUsername = "${{ secrets.DOCKERHUB_USERNAME }}"
           $dockerImageName = "$dockerHubUsername/$($env:DOCKER_IMAGE_NAME):latest"
@@ -54,7 +54,7 @@ jobs:
 
       # 4. SSH를 사용하여 원격 서버에 배포
       - name: Deploy to Remote Server
-        uses: appleboy/ssh-action@master  # JavaScript로 구현된 최신 버전 사용
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ env.SERVER_IP }}
           username: ${{ env.SERVER_USER }}
