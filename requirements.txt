@@ -6,8 +6,6 @@ python-dotenv
 aiohttp
 torch
 transformers
-PILLOW
-scikit-learn
 pytest
 sqlalchemy
 mysql-connector-python
