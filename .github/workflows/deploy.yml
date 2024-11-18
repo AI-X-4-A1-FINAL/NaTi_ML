@@ -29,14 +29,15 @@ jobs:
 
       # 3. Build and Push Docker Image using Buildx
       - name: Set up Docker Buildx
+        shell: powershell
         run: |
-          if (!(docker buildx inspect mybuilder)) {
+          if (-Not (docker buildx inspect mybuilder)) {
             docker buildx create --name mybuilder --use
           }
           docker buildx inspect --bootstrap
 
       - name: Build and Push Docker Image
-        shell: pwsh
+        shell: powershell
         run: |
           docker buildx build --platform linux/amd64 -t "$env:DOCKER_IMAGE_NAME:latest" . --push
 
