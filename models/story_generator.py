@@ -21,7 +21,7 @@ user_game_state = {}
 async def start_game(genre: str) -> Dict:
     try:
         # 초기 게임 데이터 생성 로직
-        initial_story = "이 이야기는 사랑 장르로 시작됩니다. 당신은 도심 속 작은 카페에서 일하는 바리스타입니다. 오늘은 우연히 매일 오던 단골손님, 민재와 눈이 마주칩니다. 민재는 항상 밝은 표정을 지니고 있어 마음이 끌립니다."
+        initial_story = "이 이야기는 사랑 장르로 시작됩니다..."
         affection = DEFAULT_AFFECTION  # 기본 호감도
         step = 1  # 게임의 첫 번째 단계
 
@@ -62,7 +62,7 @@ async def generate_story(user_input: str) -> Dict:
 
         # OpenAI API 호출
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "당신은 연애 시뮬레이션 게임의 스토리 작가입니다."},
                 {"role": "user", "content": initial_prompt},
