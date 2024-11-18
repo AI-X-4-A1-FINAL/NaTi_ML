@@ -31,9 +31,13 @@ jobs:
       - name: Build and push Docker image
         shell: powershell
         run: |
-          if (-Not (docker buildx inspect mybuilder)) {
+          # 빌더가 없으면 새로 생성
+          $builderExists = docker buildx ls | Select-String -Pattern "mybuilder"
+          if (-Not $builderExists) {
               docker buildx create --use --name mybuilder
           }
+          docker buildx use mybuilder
+          docker buildx inspect --bootstrap
           docker buildx build --platform linux/amd64 -t $env:DOCKER_IMAGE_NAME:latest . --push
 
       # 4. Deploy to Remote Server using SSH
