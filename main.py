@@ -5,7 +5,13 @@ from core.config import config
 
 app = FastAPI()
 
-__version__ = "0.0.1"
+# 릴리스 버전관리
+__version__ = "0.0.2"
+
+__release_notes__ = """
+## 주요 변경 사항
+- 변경사항 : 
+"""
 
 # CORS 설정
 app.add_middleware(
