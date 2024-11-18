@@ -12,7 +12,7 @@ jobs:
     env:
       DOCKER_IMAGE_NAME: stjoo0925/narrativa_ml
       DOCKER_CONTAINER_NAME: narrativa_ml
-      SERVER_IP: 192.168.0.204
+      SERVER_IP: 221.148.97.238
       SERVER_USER: narrativa
       SERVER_PORT: 8050
 
