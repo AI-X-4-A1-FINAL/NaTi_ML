@@ -28,15 +28,17 @@ jobs:
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
       # 3. Build Docker Image using PowerShell
-      - name: Build Docker Image
+      - name: Build and Push Docker Image
         shell: powershell
         run: |
-          $imageName = "${{ secrets.DOCKERHUB_USERNAME }}/$env:DOCKER_IMAGE_NAME:latest"
-          Write-Host "Building Docker Image: $imageName"
+          $dockerHubUsername = "${{ secrets.DOCKERHUB_USERNAME }}"
+          $dockerImageName = "$dockerHubUsername/$env:DOCKER_IMAGE_NAME:latest"
+
+          Write-Host "Building Docker Image: $dockerImageName"
           
-          # Docker 빌드 및 태그 생성
-          docker build -t $imageName .
-          docker push $imageName
+          # Docker 빌드 및 푸시
+          docker build -t $dockerImageName .
+          docker push $dockerImageName
 
       # 4. Deploy to Remote Server using SSH
       - name: Deploy to Remote Server
