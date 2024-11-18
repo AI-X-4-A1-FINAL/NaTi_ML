@@ -9,7 +9,7 @@ jobs:
   deploy:
     runs-on: self-hosted
     env:
-      DOCKER_IMAGE_NAME: stjoo0925/narrativa_ml
+      DOCKER_IMAGE_NAME: narrativa_ml
       DOCKER_CONTAINER_NAME: narrativa_ml
       SERVER_IP: 192.168.0.204
       SERVER_USER: narrativa
@@ -27,14 +27,16 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      # 3. Build Docker Image
+      # 3. Build Docker Image using PowerShell
       - name: Build Docker Image
         shell: powershell
         run: |
           $imageName = "${{ secrets.DOCKERHUB_USERNAME }}/$env:DOCKER_IMAGE_NAME:latest"
+          Write-Host "Building Docker Image: $imageName"
+          
+          # Docker 빌드 및 태그 생성
           docker build -t $imageName .
-          docker tag $imageName ${{ secrets.DOCKERHUB_USERNAME }}/$env:DOCKER_IMAGE_NAME:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/$env:DOCKER_IMAGE_NAME:latest
+          docker push $imageName
 
       # 4. Deploy to Remote Server using SSH
       - name: Deploy to Remote Server
