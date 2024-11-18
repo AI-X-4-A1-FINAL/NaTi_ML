@@ -12,11 +12,11 @@ class Config:
     DB_USER = os.getenv("DB_USER")
     DB_PASSWORD = os.getenv("DB_PASSWORD")
     
-    DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    DATABASE_URL = f"mysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
     # CORS
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "").split(",")
-    
+
     # OpenAI
     OPENAI_KEY = os.getenv("OPENAI_KEY")
 
