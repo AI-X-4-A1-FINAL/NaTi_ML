@@ -10,3 +10,4 @@ PILLOW
 scikit-learn
 pytest
 sqlalchemy
+mysql-connector-python
