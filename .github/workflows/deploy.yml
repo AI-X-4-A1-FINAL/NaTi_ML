@@ -1,78 +1,30 @@
-name: Docker Deploy on Dev Branch
+name: Deploy FastAPI to Windows Server
 
 on:
   push:
     branches:
-      - dev
+      - main
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest  # GitHub 호스팅 Linux 러너 사용
-    env:
-      DOCKER_IMAGE_NAME: narrativa_ml
-      DOCKER_CONTAINER_NAME: narrativa_ml
-      SERVER_IP: 221.148.97.238
-      SERVER_USER: narrativa
-      SERVER_PORT: 8050
+    runs-on: ubuntu-latest
 
     steps:
-      # 1. Git 저장소 체크아웃
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. DockerHub에 로그인
-      - name: Log in to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-      # 3. Docker 이미지 빌드 및 푸시
-      - name: Build and Push Docker Image
-        shell: pwsh
-        run: |
-          $dockerHubUsername = "${{ secrets.DOCKERHUB_USERNAME }}"
-          $dockerImageName = "$dockerHubUsername/$($env:DOCKER_IMAGE_NAME):latest"
-          
-          Write-Host "DockerHub Username: $dockerHubUsername"
-          Write-Host "Docker Image Name: $dockerImageName"
-          
-          # 변수 유효성 검사
-          if (-not $dockerHubUsername) {
-              Write-Error "DOCKERHUB_USERNAME이 설정되지 않았습니다"
-              exit 1
-          }
-
-          if (-not $env:DOCKER_IMAGE_NAME) {
-              Write-Error "DOCKER_IMAGE_NAME이 설정되지 않았습니다"
-              exit 1
-          }
-
-          # Docker 이미지 빌드 및 푸시
-          docker build -t $dockerImageName .
-          docker push $dockerImageName
-
-      # 4. SSH를 사용하여 원격 서버에 배포 및 방화벽 설정
-      - name: Deploy to Remote Server
+      - name: Set up SSH
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ env.SERVER_IP }}
-          username: ${{ env.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ env.SERVER_PORT }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
           script: |
-            # ufw가 설치되어 있는지 확인하고 포트 열기
-            if command -v ufw >/dev/null 2>&1; then
-              echo "Configuring firewall..."
-              sudo ufw allow 22
-              sudo ufw allow 8050
-              sudo ufw reload
-            else
-              echo "UFW not installed, skipping firewall configuration"
-            fi
-
-            # Docker 컨테이너 배포
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/$($env:DOCKER_IMAGE_NAME):latest
-            docker stop $DOCKER_CONTAINER_NAME || true
-            docker rm $DOCKER_CONTAINER_NAME || true
-            docker run -d --name $DOCKER_CONTAINER_NAME -p 8050:8050 ${{ secrets.DOCKERHUB_USERNAME }}/$($env:DOCKER_IMAGE_NAME):latest
+            docker stop fastapi_app || true
+            docker rm fastapi_app || true
+            docker rmi my_fastapi_app || true
+            cd /path/to/deploy
+            git pull
+            docker build -t my_fastapi_app .
+            docker run -d --name fastapi_app -p 8050:8050 my_fastapi_app
