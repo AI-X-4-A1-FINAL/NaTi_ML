@@ -28,19 +28,17 @@ jobs:
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
       # 3. Build and Push Docker Image using Buildx
-      - name: Build and push Docker image
-        shell: powershell
+      - name: Set up Docker Buildx
         run: |
-          # 빌더가 없으면 새로 생성
-          $builderExists = docker buildx ls | Select-String -Pattern "mybuilder"
-          if (-Not $builderExists) {
-              docker buildx create --use --name mybuilder
+          if (!(docker buildx inspect mybuilder)) {
+            docker buildx create --name mybuilder --use
           }
-          docker buildx use mybuilder
           docker buildx inspect --bootstrap
-          
-          # Docker 이미지 빌드 및 푸시 (빌드 컨텍스트 명시적으로 추가)
-          docker buildx build --platform linux/amd64 -t $env:DOCKER_IMAGE_NAME:latest . --push
+
+      - name: Build and Push Docker Image
+        shell: pwsh
+        run: |
+          docker buildx build --platform linux/amd64 -t "$env:DOCKER_IMAGE_NAME:latest" . --push
 
       # 4. Deploy to Remote Server using SSH
       - name: Deploy to Remote Server
