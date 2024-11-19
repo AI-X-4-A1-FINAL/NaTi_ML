@@ -21,15 +21,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            $container = docker ps -q --filter "name=fastapi_app"
-            if ($container -ne "") {
-              docker stop fastapi_app
-              docker rm fastapi_app
-            }
-            $image = docker images -q my_fastapi_app
-            if ($image -ne "") {
-              docker rmi my_fastapi_app
-            }
+            docker ps --filter "name=fastapi_app" -q | ForEach-Object { docker stop $_; docker rm $_ }
+            docker images "my_fastapi_app" -q | ForEach-Object { docker rmi $_ }
             cd C:/path/to/deploy
             git pull
             docker build -t my_fastapi_app .
