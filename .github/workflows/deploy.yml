@@ -13,31 +13,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-      - name: Cache Python dependencies
+      - name: Cache Docker layers
         uses: actions/cache@v3
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-docker-${{ hashFiles('requirements.txt') }}
           restore-keys: |
-            ${{ runner.os }}-pip-
+            ${{ runner.os }}-docker-
 
-      - name: Install dependencies
+      - name: Detect requirements.txt changes
+        id: req_check
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          if [ "$(git log -1 --pretty=format:%H -- requirements.txt)" != "$(git hash-object requirements.txt)" ]; then
+            echo "::set-output name=changed::true"
+          else
+            echo "::set-output name=changed::false"
+          fi
 
       - name: Build and Run Docker Container
+        if: steps.req_check.outputs.changed == 'true'
         run: |
+          echo "Building Docker container as requirements.txt has changed..."
+          docker buildx build \
+            --cache-from=type=local,src=/tmp/.buildx-cache \
+            --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max \
+            -t my_fastapi_app .
           docker ps -q --filter "name=fastapi_app" | xargs -r docker stop
           docker ps -a -q --filter "name=fastapi_app" | xargs -r docker rm
-          docker images -q "my_fastapi_app" | xargs -r docker rmi
-          docker build -t my_fastapi_app .
           docker run -d --name fastapi_app -p 8050:8050 my_fastapi_app
+
+      - name: Skip Docker Build
+        if: steps.req_check.outputs.changed == 'false'
+        run: echo "Skipping Docker build as requirements.txt has not changed."
 
       - name: Verify Deployment
         run: curl -f http://localhost:8050 || echo "Deployment verification failed"
