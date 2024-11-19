@@ -3,7 +3,7 @@ name: Deploy FastAPI to Windows Server
 on:
   push:
     branches:
-      - main
+      - dev
 
 jobs:
   deploy:
