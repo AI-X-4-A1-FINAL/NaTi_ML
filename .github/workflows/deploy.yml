@@ -21,10 +21,11 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            if (docker ps -q --filter "name=fastapi_app") { docker stop fastapi_app }
-            if (docker ps -a -q --filter "name=fastapi_app") { docker rm fastapi_app }
-            if (docker images -q my_fastapi_app) { docker rmi my_fastapi_app }
+            # PowerShell 명령어 사용
+            if (docker ps --filter "name=fastapi_app" | Select-String "fastapi_app") { docker stop fastapi_app }
+            if (docker ps -a --filter "name=fastapi_app" | Select-String "fastapi_app") { docker rm fastapi_app }
+            if (docker images | Select-String "my_fastapi_app") { docker rmi my_fastapi_app }
             cd C:/path/to/deploy
             git pull
             docker build -t my_fastapi_app .
-            docker run -d --name fastapi_app -p 8050:8000 my_fastapi_app
+            docker run -d --name fastapi_app -p 8050:8050 my_fastapi_app
