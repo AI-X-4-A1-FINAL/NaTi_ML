@@ -13,7 +13,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up SSH
+      - name: SSH into Server and Deploy
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -21,10 +21,10 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            docker stop fastapi_app || true
-            docker rm fastapi_app || true
-            docker rmi my_fastapi_app || true
-            cd /path/to/deploy
+            docker ps -q --filter "name=fastapi_app" | grep -q . && docker stop fastapi_app
+            docker ps -a -q --filter "name=fastapi_app" | grep -q . && docker rm fastapi_app
+            docker images -q my_fastapi_app | grep -q . && docker rmi my_fastapi_app
+            cd C:/path/to/deploy
             git pull
             docker build -t my_fastapi_app .
-            docker run -d --name fastapi_app -p 8050:8050 my_fastapi_app
+            docker run -d --name fastapi_app -p 8050:8000 my_fastapi_app
