@@ -1,4 +1,4 @@
-name: Auto Merge feat/** into dev and Run Release Script
+name: Auto Merge feat/** into dev Script
 
 on:
   schedule:
