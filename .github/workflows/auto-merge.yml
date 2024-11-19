@@ -32,7 +32,9 @@ jobs:
 
           for branch in $(git branch -r | grep "origin/feat/" | sed 's|origin/||'); do
             echo "Merging $branch into dev"
-            git merge --no-ff --no-edit "$branch" || echo "Conflict in $branch, manual resolution required"
+            if ! git merge --no-ff --no-edit "$branch"; then
+              echo "WARNING: Conflict in $branch, manual resolution required"
+            fi
           done
 
       - name: Push changes to dev
@@ -48,16 +50,18 @@ jobs:
           key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile', '**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-docker-
+            ${{ runner.os }}-
 
       - name: Build and Push Docker Image
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+          IMAGE_NAME: my_dockerhub_user/my_docker_image
         run: |
+          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
           docker buildx build \
             --cache-from=type=local,src=/tmp/.buildx-cache \
             --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max \
-            -t my_docker_image .
-          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-          docker tag my_docker_image my_dockerhub_user/my_docker_image:latest
-          docker push my_dockerhub_user/my_docker_image:latest
+            --load \
+            -t $IMAGE_NAME:latest .
+          docker push $IMAGE_NAME:latest
