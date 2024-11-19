@@ -21,15 +21,12 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            Write-Host "Stopping and removing old containers if they exist..."
             if (docker ps --filter "name=fastapi_app" | Select-String "fastapi_app") { docker stop fastapi_app }
             if (docker ps -a --filter "name=fastapi_app" | Select-String "fastapi_app") { docker rm fastapi_app }
             if (docker images | Select-String "my_fastapi_app") { docker rmi my_fastapi_app }
 
-            Write-Host "Pulling latest code..."
             cd C:/path/to/deploy
             git pull
 
-            Write-Host "Building and running the Docker container..."
             docker build -t my_fastapi_app .
             docker run -d --name fastapi_app -p 8050:8050 my_fastapi_app
