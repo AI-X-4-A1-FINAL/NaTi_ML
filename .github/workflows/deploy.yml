@@ -1,4 +1,4 @@
-name: Deploy FastAPI to Windows Server
+name: Deploy to Ubuntu Server
 
 on:
   push:
@@ -7,25 +7,29 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: SSH into Server and Deploy
-        uses: appleboy/ssh-action@master
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            docker ps -q --filter "name=fastapi_app" | %{ docker stop $_; docker rm $_ }
-            docker images -q "my_fastapi_app" | %{ docker rmi $_ }
+          python-version: '3.12'
 
-            cd C:/path/to/deploy
-            git pull
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-            docker build -t my_fastapi_app .
-            docker run -d --name fastapi_app -p 8050:8050 my_fastapi_app
+      - name: Build and Run Docker Container
+        run: |
+          docker ps -q --filter "name=fastapi_app" | xargs -r docker stop
+          docker ps -a -q --filter "name=fastapi_app" | xargs -r docker rm
+          docker images -q "my_fastapi_app" | xargs -r docker rmi
+          docker build -t my_fastapi_app .
+          docker run -d --name fastapi_app -p 8050:8050 my_fastapi_app
+
+      - name: Verify Deployment
+        run: curl -f http://localhost:8050 || echo "Deployment verification failed"
