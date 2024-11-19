@@ -1,0 +1,52 @@
+name: Auto Merge feat/** into dev and Run Release Script
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch: # 수동 실행 트리거 추가
+
+jobs:
+  merge_and_release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch all branches
+        run: git fetch --all
+
+      - name: Merge feat/** branches into dev
+        run: |
+          git checkout dev
+
+          for branch in $(git branch -r | grep "origin/feat/" | sed 's|origin/||'); do
+            echo "Merging $branch into dev"
+            git merge --no-ff --no-edit "$branch" || echo "Conflict in $branch, manual resolution required"
+          done
+
+      - name: Push changes to dev
+        run: git push origin dev
+
+      - name: Run Release Script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Running release script..."
+
+      - name: Build and Push Docker Image
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+        run: |
+          docker build -t my_docker_image .
+          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+          docker tag my_docker_image my_dockerhub_user/my_docker_image:latest
+          docker push my_dockerhub_user/my_docker_image:latest
