@@ -21,9 +21,9 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            docker ps -q --filter "name=fastapi_app" | grep -q . && docker stop fastapi_app
-            docker ps -a -q --filter "name=fastapi_app" | grep -q . && docker rm fastapi_app
-            docker images -q my_fastapi_app | grep -q . && docker rmi my_fastapi_app
+            if (docker ps -q --filter "name=fastapi_app") { docker stop fastapi_app }
+            if (docker ps -a -q --filter "name=fastapi_app") { docker rm fastapi_app }
+            if (docker images -q my_fastapi_app) { docker rmi my_fastapi_app }
             cd C:/path/to/deploy
             git pull
             docker build -t my_fastapi_app .
