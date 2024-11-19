@@ -5,6 +5,9 @@ on:
     - cron: "0 0 * * *"
   workflow_dispatch: # 수동 실행 트리거 추가
 
+permissions: 
+  contents: write
+
 jobs:
   merge_and_release:
     runs-on: ubuntu-latest
