@@ -2,7 +2,7 @@ name: Auto Merge feat/** into dev Script
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "15 15 * * *"
   workflow_dispatch: # 수동 실행 트리거 추가
 
 permissions: 
