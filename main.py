@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from api.routes import image, music, story
+from api.routes import image, story
 from fastapi.middleware.cors import CORSMiddleware
 from core.config import config
 
@@ -16,7 +16,7 @@ __release_notes__ = """
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=config.CORS_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT"],
     allow_headers=["*"],
@@ -24,7 +24,6 @@ app.add_middleware(
 
 # 라우터 등록
 app.include_router(image.router, prefix="/api/image", tags=["Image"])
-app.include_router(music.router, prefix="/api/music", tags=["Music"])
 app.include_router(story.router, prefix="/api/story", tags=["Story"])
 
 if __name__ == "__main__":
