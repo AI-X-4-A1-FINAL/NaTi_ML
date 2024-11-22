@@ -11,3 +11,4 @@ sqlalchemy
 mysql-connector-python
 librosa
 soundfile
+openai==0.28
