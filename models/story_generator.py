@@ -15,15 +15,19 @@ def generate_initial_story(genre: str) -> Dict:
     try:
         # 프롬프트 정의
         prompt = (
-            f"Create an engaging opening story in the '{genre}' genre. "
-            "Make sure it hooks the audience and sets the tone for the game."
+            f"지금 '{genre}' 이 장르에 맞는 내용의 게임 세계관을 만들어줘야해. "
+            "한글로 말하고, 한번 말할 때 마다 200자 이내로 말하면 돼"
+            "유저에게 상황과 함께 어떤 선택을 할지 2~3개의 선택지를 주도록해"
+            "선택에 따라서 생존확률을 계산할꺼야. 생존확률은 너만 알고있고 계속 기억하고 있어야해"
+            "계속 이어서 스토리를 만들어줘"
+            "스토리가 갑자기 다른 이야기로 가거나 하면 안돼" 
         )
 
         # OpenAI Chat API 호출
         response = openai.ChatCompletion.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a creative writer specializing in storytelling."},
+                {"role": "system", "content": "너는 게임 스토리텔링의 전문가야. 한글로 대답해"},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,
@@ -36,3 +40,30 @@ def generate_initial_story(genre: str) -> Dict:
         }
     except Exception as e:
         raise Exception(f"Error generating initial story: {e}")
+    
+# 돌고도는 이야기
+def generate_continued_story(previous_story: str, user_input: str, genre: str, current_stage: int) -> Dict:
+    try:
+        prompt = (
+            f"장르: '{genre}'\n"
+            f"현재 단계: {current_stage}\n"
+            f"이전 이야기: '{previous_story}'\n\n"
+            f"유저의 입력: '{user_input}'\n\n"
+            "유저 입력을 바탕으로 이야기를 이어가. 한 번 말할 때 200자 이내로 말하고, 상황에 맞는 2~3개의 선택지를 줘. "
+            "스토리가 갑자기 다른 이야기로 변하면 안 돼."
+            "장르, 현재 단계, 이전 이야기를 유저에게 해주지 마."
+        )
+
+        response = openai.ChatCompletion.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "너는 게임 스토리텔링의 전문가야. 한글로 대답해."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=300
+        )
+
+        return {"story": response["choices"][0]["message"]["content"].strip()}
+    except Exception as e:
+        raise Exception(f"Error generating continued story: {e}")
