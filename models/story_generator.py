@@ -42,13 +42,13 @@ def generate_initial_story(genre: str) -> Dict:
         raise Exception(f"Error generating initial story: {e}")
     
 # 돌고도는 이야기
-def generate_continued_story(previous_story: str, user_input: str, genre: str, current_stage: int) -> Dict:
+def generate_continued_story(initialStory: str, userInput: str, genre: str, currentStage: int) -> Dict:
     try:
         prompt = (
             f"장르: '{genre}'\n"
-            f"현재 단계: {current_stage}\n"
-            f"이전 이야기: '{previous_story}'\n\n"
-            f"유저의 입력: '{user_input}'\n\n"
+            f"현재 단계: {currentStage}\n"
+            f"이전 이야기: '{initialStory}'\n\n"
+            f"유저의 입력: '{userInput}'\n\n"
             "유저 입력을 바탕으로 이야기를 이어가. 한 번 말할 때 200자 이내로 말하고, 상황에 맞는 2~3개의 선택지를 줘. "
             "스토리가 갑자기 다른 이야기로 변하면 안 돼."
             "장르, 현재 단계, 이전 이야기를 유저에게 해주지 마."
