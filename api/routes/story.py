@@ -6,12 +6,15 @@ from models.story_generator import generate_initial_story, generate_continued_st
 # 요청 모델 정의
 class StartGameRequest(BaseModel):
     genre: str
+    prompt : str
+    # survivalProbability: str
 
 class StoryRequest(BaseModel):
     genre: str
     currentStage: int
     initialStory: str
     userInput: str
+    previousUserInput: str
     
 # 라우터 객체 생성
 router = APIRouter()
@@ -21,7 +24,10 @@ router = APIRouter()
 async def start_game_endpoint(request: StartGameRequest):
     try:
         # 장르를 기반으로 초기 스토리 생성
-        result = generate_initial_story(request.genre)
+        result = generate_initial_story(
+            request.genre,
+            request.prompt,
+            )
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -35,7 +41,8 @@ async def chat_endpoint(request: StoryRequest):
             initialStory=request.initialStory,
             userInput=request.userInput,
             genre=request.genre,
-            currentStage=request.currentStage
+            currentStage=request.currentStage,
+            previousUserInput= request.previousUserInput
         )
         return result
     except Exception as e:
