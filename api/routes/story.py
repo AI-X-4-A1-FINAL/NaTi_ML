@@ -9,9 +9,9 @@ class StartGameRequest(BaseModel):
 
 class StoryRequest(BaseModel):
     genre: str
-    current_stage: int
+    currentStage: int
     initialStory: str
-    user_input: str
+    userInput: str
     
 # 라우터 객체 생성
 router = APIRouter()
@@ -33,9 +33,9 @@ async def chat_endpoint(request: StoryRequest):
         # 이전 이야기와 유저 입력으로 새로운 스토리 생성
         result = generate_continued_story(
             initialStory=request.initialStory,
-            user_input=request.user_input,
+            userInput=request.userInput,
             genre=request.genre,
-            current_stage=request.current_stage
+            currentStage=request.currentStage
         )
         return result
     except Exception as e:
