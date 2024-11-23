@@ -12,3 +12,4 @@ mysql-connector-python
 librosa
 soundfile
 openai==0.28
+googletrans==4.0.0-rc1

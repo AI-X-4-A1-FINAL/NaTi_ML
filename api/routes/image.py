@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from models.image_generator import generate_image_with_dalle
+from googletrans import Translator  # googletrans 라이브러리 사용
 
 # 라우터 인스턴스 생성
 router = APIRouter()
@@ -20,14 +21,26 @@ async def generate_image(request: ImageRequest):
     :return: 생성된 이미지의 URL을 JSON 형식으로 반환
     """
     try:
+        # 번역기 설정
+        translator = Translator()
+
+        # 한글 프롬프트를 영어로 번역
+        translated_prompt = translator.translate(request.prompt, src="ko", dest="en").text
+
         # DALL·E API 호출
-        response = generate_image_with_dalle(prompt=request.prompt, size=request.size, n=request.n)
+        response = generate_image_with_dalle(
+            prompt=translated_prompt, size=request.size, n=request.n
+        )
 
         # 응답에서 이미지 URL 추출
         image_url = response['data'][0]['url']
 
-        # 이미지 URL을 JSON 형식으로 반환
-        return JSONResponse(content={"imageUrl": image_url})
+        # 원본 프롬프트와 함께 반환
+        return JSONResponse(content={
+            "originalPrompt": request.prompt,
+            "translatedPrompt": translated_prompt,
+            "imageUrl": image_url
+        })
     
     except RuntimeError as e:
         # API 호출 중 오류 발생 시 HTTPException 반환
