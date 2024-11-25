@@ -10,11 +10,11 @@ class StartGameRequest(BaseModel):
     # survivalProbability: str
 
 class StoryRequest(BaseModel):
-    genre: str
     currentStage: int
+    genre: str
     initialStory: str
-    userInput: str
     previousUserInput: str
+    userInput: str
     
 # 라우터 객체 생성
 router = APIRouter()
@@ -36,15 +36,16 @@ async def start_game_endpoint(request: StartGameRequest):
 @router.post("/chat", response_model=dict)
 async def chat_endpoint(request: StoryRequest):
     try:
-        # 이전 이야기와 유저 입력으로 새로운 스토리 생성
+        print(f"Received data from Spring: {request.dict()}")  # 디버깅용 로그
+
+        # 요청 데이터 처리
         result = generate_continued_story(
-            initialStory=request.initialStory,
-            userInput=request.userInput,
-            genre=request.genre,
             currentStage=request.currentStage,
-            previousUserInput= request.previousUserInput
+            genre=request.genre,
+            initialStory=request.initialStory,
+            previousUserInput=request.previousUserInput,
+            userInput=request.userInput,
         )
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
