@@ -23,7 +23,7 @@ app.add_middleware(
 )
 
 # 라우터 등록
-app.include_router(image.router, prefix="/api/image", tags=["Image"])
+app.include_router(image.router, prefix="/api/images", tags=["Image"])
 app.include_router(story.router, prefix="/api/story", tags=["Story"])
 
 if __name__ == "__main__":
