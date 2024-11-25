@@ -36,7 +36,7 @@ async def start_game_endpoint(request: StartGameRequest):
 @router.post("/chat", response_model=dict)
 async def chat_endpoint(request: StoryRequest):
     try:
-        print(f"Received data from Spring: {request.dict()}")  # 디버깅용 로그
+        # print(f"Received data from Spring: {request.dict()}")  # 디버깅용 로그
 
         # 요청 데이터 처리
         result = generate_continued_story(
