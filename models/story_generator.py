@@ -11,7 +11,6 @@ load_dotenv()
 api_key = os.getenv("OPENAI_KEY")
 
 # 제발 재밌게 만들어줘
-# 매개변수 순서 바뀌면 안되요. 바꿔야하면 말해주셈.
 def generate_story(genre: str, prompt: str, user_input: str = None, conversation_history: str = "") -> str:
     try:
         # 기본적인 프롬프트 템플릿
@@ -41,7 +40,8 @@ def generate_story(genre: str, prompt: str, user_input: str = None, conversation
         model = ChatOpenAI(
             openai_api_key=api_key,
             model="gpt-4o-mini",
-            temperature=0.2  
+            temperature=0.2,
+            max_tokens=200
         )
 
         # Output Parser 정의

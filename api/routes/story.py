@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import boto3
 import random
 import os
-from typing import List
+from typing import List, Optional
 from dotenv import load_dotenv
 from models.story_generator import generate_story
 from boto3.s3.transfer import S3Transfer
@@ -71,19 +71,23 @@ def generate_story_endpoint(request: StoryRequest):
 
 # 이후 스토리 진행
 class ChatRequest(BaseModel):
-    currentStage: int
     genre: str
+    currentStage: int
     initialStory: str
-    previousUserInput: str
     userInput: str
-    conversationHistory: List[str] = []  # 대화 내용을 누적할 리스트 추가
+    previousUserInput: str
+    conversationHistory: Optional[List[str]] = None
 
 # 이후 스토리 진행 엔드포인트
 @router.post("/chat")
 def continue_story(request: ChatRequest):
     try:
-        # 이전 대화 내용을 계속 이어가도록 프롬프트 생성
-        conversation_history = "\n".join(request.conversationHistory)  # 대화 내용 연결
+        # conversationHistory가 None일 경우 빈 배열로 처리
+        if request.conversationHistory is None:
+            request.conversationHistory = []
+
+        # 대화 내용 연결
+        conversation_history = "\n".join(request.conversationHistory) 
         prompt = f"Initial Story: {request.initialStory}\n{conversation_history}\nUser Input: {request.userInput}"
 
         # 스토리 생성 함수 호출
@@ -95,4 +99,5 @@ def continue_story(request: ChatRequest):
         
         return {"story": story_response, "conversationHistory": request.conversationHistory}
     except Exception as e:
+        print(f"Error generating story: {e}")
         raise HTTPException(status_code=500, detail=f"Error generating story: {str(e)}")
