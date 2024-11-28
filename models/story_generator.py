@@ -8,19 +8,20 @@ from langchain_openai import ChatOpenAI
 load_dotenv()
 
 # OpenAI API 키 설정
-os.environ["OPENAI_KEY"] = os.getenv("OPENAI_KEY")
+api_key = os.getenv("OPENAI_KEY")
 
 # LangChain 기반 스토리 생성 함수
 def generate_story(genre: str, prompt: str) -> str:
-    try:
-        # 프롬프트 정의
+    try:      
+        # 프롬프트 정의 부분
         system_template = (
             "You are an expert in storytelling. "
             "Generate a story in the '{genre}' genre based on the following prompt: "
+            "The world is set in a universe where {prompt}. "
+            "Ensure that the story reflects the theme of the genre and incorporates the prompt elements."
         )
         user_template = "{prompt}"
 
-        # ChatPromptTemplate 생성
         prompt_template = ChatPromptTemplate.from_messages([
             ("system", system_template),
             ("user", user_template)
@@ -28,8 +29,9 @@ def generate_story(genre: str, prompt: str) -> str:
 
         # OpenAI 모델 초기화
         model = ChatOpenAI(
+            openai_api_key=api_key,
             model="gpt-4o-mini",
-            temperature=0.7
+            temperature=0.2
         )
 
         # Output Parser 정의

@@ -14,6 +14,5 @@ soundfile
 openai==0.28
 googletrans==4.0.0-rc1
 langchain
-langchain-openai
-langchain-community
-langchain-core
+boto3
+deep-translator
