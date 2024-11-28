@@ -68,3 +68,31 @@ def generate_story_endpoint(request: StoryRequest):
         return {"story": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating story: {str(e)}")
+
+# 이후 스토리 진행
+class ChatRequest(BaseModel):
+    currentStage: int
+    genre: str
+    initialStory: str
+    previousUserInput: str
+    userInput: str
+    conversationHistory: List[str] = []  # 대화 내용을 누적할 리스트 추가
+
+# 이후 스토리 진행 엔드포인트
+@router.post("/chat")
+def continue_story(request: ChatRequest):
+    try:
+        # 이전 대화 내용을 계속 이어가도록 프롬프트 생성
+        conversation_history = "\n".join(request.conversationHistory)  # 대화 내용 연결
+        prompt = f"Initial Story: {request.initialStory}\n{conversation_history}\nUser Input: {request.userInput}"
+
+        # 스토리 생성 함수 호출
+        story_response = generate_story(request.genre, prompt, request.userInput)
+        
+        # 대화 내역에 새로운 사용자 입력과 결과를 추가
+        request.conversationHistory.append(f"User: {request.userInput}")
+        request.conversationHistory.append(f"Story: {story_response}")
+        
+        return {"story": story_response, "conversationHistory": request.conversationHistory}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating story: {str(e)}")
