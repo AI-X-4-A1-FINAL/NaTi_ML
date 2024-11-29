@@ -1,40 +1,4 @@
-# 빌드 단계: 의존성 설치 및 빌드를 위한 단계
-FROM python:3.12-slim AS build
-
-# 작업 디렉토리 설정
-WORKDIR /app
-
-# 환경변수 설정
-ARG CORS_ORIGINS
-ARG OPENAI_KEY
-ARG AWS_ACCESS_KEY
-ARG AWS_SECRET_KEY
-ARG AWS_REGION
-ARG BUCKET_NAME
-
-# 이 값들을 이미지 내부에서 사용하려면 ENV로 설정
-ENV CORS_ORIGINS=${CORS_ORIGINS}
-ENV OPENAI_KEY=${OPENAI_KEY}
-ENV AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
-ENV AWS_SECRET_KEY=${AWS_SECRET_KEY}
-ENV AWS_REGION=${AWS_REGION}
-ENV BUCKET_NAME=${BUCKET_NAME}
-
-# 필요한 시스템 패키지 설치 (빌드용)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Python 의존성 파일 복사 및 설치
-COPY requirements.txt . 
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install uvicorn
-
-# 애플리케이션 코드 복사
-COPY . .
-
-# 실제 실행 단계: 빌드된 파일을 최소화된 이미지로 복사
+# 기본 이미지 설정
 FROM python:3.12-slim
 
 # 작업 디렉토리 설정
@@ -49,19 +13,31 @@ ARG AWS_REGION
 ARG BUCKET_NAME
 
 # 이 값들을 이미지 내부에서 사용하려면 ENV로 설정
-ENV CORS_ORIGINS=${CORS_ORIGINS}
-ENV OPENAI_KEY=${OPENAI_KEY}
-ENV AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
-ENV AWS_SECRET_KEY=${AWS_SECRET_KEY}
-ENV AWS_REGION=${AWS_REGION}
-ENV BUCKET_NAME=${BUCKET_NAME}
+ENV CORS_ORIGINS=$CORS_ORIGINS
+ENV OPENAI_KEY=$OPENAI_KEY
+ENV AWS_ACCESS_KEY=$AWS_ACCESS_KEY
+ENV AWS_SECRET_KEY=$AWS_SECRET_KEY
+ENV AWS_REGION=$AWS_REGION
+ENV BUCKET_NAME=$BUCKET_NAME
 
-# 빌드 단계에서 설치된 Python 의존성만 복사
-COPY --from=build /app /app
+# 필요한 시스템 패키지 설치 (빌드용)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# 실행 단계에서 uvicorn 설치
+# Python 의존성 파일 복사 및 설치
+COPY requirements.txt . 
+RUN pip install --no-cache-dir -r requirements.txt
+
+# FastAPI 서버 실행에 필요한 uvicorn 설치
 RUN pip install uvicorn
 
-# FastAPI 서버 실행 (uvicorn 사용)
+# 애플리케이션 코드 복사
+COPY . .
+
+# 포트 열기
 EXPOSE 8050
+
+# FastAPI 서버 실행 (uvicorn 사용)
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8050"]
