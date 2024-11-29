@@ -88,8 +88,9 @@ jobs:
 
           # 새로운 컨테이너 실행
           ssh -i "ec2_key.pem" -o "StrictHostKeyChecking=no" $USER@$HOST "
-            echo 'Running new container...'
-            docker run -d -p 8050:8050 --name narrativa_ml\$(date +%s) \
+            container_name=narrativa_ml_$(date +%Y%m%d%H%M%S)
+            echo 'Running new container with name \$container_name...'
+            docker run -d -p 8050:8050 --name \$container_name \
               -e CORS_ORIGINS=${{ secrets.CORS_ORIGINS }} \
               -e OPENAI_KEY=${{ secrets.OPENAI_KEY }} \
               -e AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }} \
