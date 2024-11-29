@@ -3,9 +3,13 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from models.image_generator import generate_image_with_dalle
 from models.prompt_summarizer import summarize_prompt
+from models.prompts import game_prompt
 from googletrans import Translator  # googletrans 라이브러리 사용
 import openai  # OpenAI GPT API 사용
 
+
+genre = "판타지"
+world_decription = "좀비물"
 
 
 # 라우터 인스턴스 생성
@@ -18,26 +22,6 @@ class ImageRequest(BaseModel):
     n: int = 1  # 생성할 이미지 수 (기본값 제공)
 
 
-async def summarize_prompt(prompt: str) -> str:
-    """
-    GPT를 사용하여 프롬프트 요약
-    :param prompt: 원본 프롬프트
-    :return: 요약된 프롬프트
-    """
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "Summarize the following prompt briefly for image generation."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens=50
-        )
-        return response["choices"][0]["message"]["content"].strip()
-    except Exception as e:
-        raise RuntimeError(f"Error summarizing prompt: {str(e)}")
-
 @router.post("/generate-image")
 async def generate_image(request: ImageRequest):
     """
@@ -46,8 +30,10 @@ async def generate_image(request: ImageRequest):
     :return: 생성된 이미지의 URL을 JSON 형식으로 반환
     """
     try:
+
+        
         # 프롬프트 요약
-        summarized_prompt = await summarize_prompt(request.prompt)
+        summarized_prompt = await summarize_prompt(genre, world_decription)
 
         # 번역기 설정
         translator = Translator()
