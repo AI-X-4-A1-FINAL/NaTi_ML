@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from models.image_generator import generate_image_with_dalle
 from models.prompt_summarizer import summarize_prompt
 from deep_translator import GoogleTranslator  
-import openai  # OpenAI GPT API 사용
+import openai
 
 # 라우터 인스턴스 생성
 router = APIRouter()
@@ -14,8 +14,6 @@ class ImageRequest(BaseModel):
     prompt: str  # 사용자가 입력할 프롬프트
     size: str = "1024x1024"  # 이미지 크기 (기본값 제공)
     n: int = 1  # 생성할 이미지 수 (기본값 제공)
-
-
 
 @router.post("/generate-image")
 async def generate_image(request: ImageRequest):
@@ -33,11 +31,9 @@ async def generate_image(request: ImageRequest):
         summarized_prompt = await summarize_prompt(request.prompt, genre=gen, theme=them)
 
         # 번역기 설정 (deep_translator 사용)
-        # 한글 프롬프트를 영어로 번역
-        translated_prompt = GoogleTranslator(source='ko', target='en').translate(summarized_prompt)
 
         # 한글 프롬프트를 영어로 번역
-        translated_prompt = translator.translate(summarized_prompt, src="ko", dest="en").text
+        translated_prompt = GoogleTranslator(source='ko', target='en').translate(summarized_prompt)
 
         # DALL·E API 호출
         response = generate_image_with_dalle(
