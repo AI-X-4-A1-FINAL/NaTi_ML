@@ -34,7 +34,7 @@ jobs:
       # Docker 이미지 빌드 및 푸시
       - name: Build and push Docker image to Docker Hub
         run: |
-          docker build -f dockerfile.ec2 --build-arg CORS_ORIGINS=${{ secrets.CORS_ORIGINS }} \
+          docker build -f dockerfile.ec2 -t narrativa_ml:latest . --build-arg CORS_ORIGINS=${{ secrets.CORS_ORIGINS }} \
                                          --build-arg OPENAI_KEY=${{ secrets.OPENAI_KEY }} \
                                          --build-arg AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }} \  
                                          --build-arg AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }} \  
