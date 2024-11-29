@@ -84,9 +84,9 @@ jobs:
             docker run -d -p 8050:8050 --name narrativa_ml\$(date +%s) \
               -e CORS_ORIGINS=${{ secrets.CORS_ORIGINS }} \
               -e OPENAI_KEY=${{ secrets.OPENAI_KEY }} \
-              -e AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }} \  
-              -e AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }} \  
-              -e AWS_REGION=${{ secrets.AWS_REGION }} \  
-              -e BUCKET_NAME=${{ secrets.BUCKET_NAME }} \  
+              -e AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }} \
+              -e AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }} \
+              -e AWS_REGION=${{ secrets.AWS_REGION }} \
+              -e BUCKET_NAME=${{ secrets.BUCKET_NAME }} \
               ${{ secrets.DOCKER_EC2_USERNAME }}/narrativa_ml:latest
           "
