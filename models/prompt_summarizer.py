@@ -1,7 +1,6 @@
 import openai
 import os
 from dotenv import load_dotenv
-from models.prompts import game_prompt  # prompts.py에서 함수를 임포트
 
 
 # 환경 변수 로드
