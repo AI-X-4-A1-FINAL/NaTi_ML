@@ -3,12 +3,6 @@ uvicorn[standard]
 pydantic
 requests
 python-dotenv
-aiohttp
-torch
-transformers
-sqlalchemy
-mysql-connector-python
-librosa
 openai==0.28
 langchain
 boto3
