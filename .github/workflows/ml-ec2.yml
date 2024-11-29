@@ -69,11 +69,11 @@ jobs:
             fi
           "
 
-          # 포트 충돌 방지를 위해 8050 포트가 사용 중이면 다른 포트로 변경하거나 포트 해제
+          # 포트 충돌 방지를 위해 8000 포트가 사용 중이면 다른 포트로 변경하거나 포트 해제
           ssh -i "ec2_key.pem" -o "StrictHostKeyChecking=no" $USER@$HOST "
-            if lsof -i :8050 > /dev/null; then
-              echo 'Port 8050 is already in use. Stopping the process using it.'
-              lsof -t -i :8050 | xargs kill -9 || true
+            if lsof -i :8000 > /dev/null; then
+              echo 'Port 8000 is already in use. Stopping the process using it.'
+              lsof -t -i :8000 | xargs kill -9 || true
             fi
           "
 
@@ -90,7 +90,7 @@ jobs:
           ssh -i "ec2_key.pem" -o "StrictHostKeyChecking=no" $USER@$HOST "
             container_name=narrativa_ml_$(date +%Y%m%d%H%M%S)_$(openssl rand -hex 6)
             echo 'Running new container with name \$container_name...'
-            docker run -d -p 8050:8050 --name \$container_name \
+            docker run -d -p 8000:8000 --name \$container_name \
               -e CORS_ORIGINS=${{ secrets.CORS_ORIGINS }} \
               -e OPENAI_KEY=${{ secrets.OPENAI_KEY }} \
               -e AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }} \
