@@ -27,6 +27,10 @@ jobs:
           username: ${{ secrets.DOCKER_EC2_USERNAME }}
           password: ${{ secrets.DOCKER_EC2_PASSWORD }}
 
+      # 디버깅을 위한 현재 디렉토리 확인
+      - name: List files in the current directory
+        run: ls -al
+
       # Docker 이미지 빌드 및 푸시
       - name: Build and push Docker image to Docker Hub
         run: |
