@@ -88,7 +88,7 @@ jobs:
 
           # 새로운 컨테이너 실행
           ssh -i "ec2_key.pem" -o "StrictHostKeyChecking=no" $USER@$HOST "
-            container_name=narrativa_ml_$(date +%Y%m%d%H%M%S)
+            container_name=narrativa_ml_$(date +%Y%m%d%H%M%S)_$(openssl rand -hex 6)
             echo 'Running new container with name \$container_name...'
             docker run -d -p 8050:8050 --name \$container_name \
               -e CORS_ORIGINS=${{ secrets.CORS_ORIGINS }} \
