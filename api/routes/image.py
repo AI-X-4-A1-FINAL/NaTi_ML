@@ -3,14 +3,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from models.image_generator import generate_image_with_dalle
 from models.prompt_summarizer import summarize_prompt
-from models.prompts import game_prompt
-from googletrans import Translator  # googletrans 라이브러리 사용
+from deep_translator import GoogleTranslator  
 import openai  # OpenAI GPT API 사용
-
-
-genre = "판타지"
-world_decription = "좀비물"
-
 
 # 라우터 인스턴스 생성
 router = APIRouter()
@@ -22,6 +16,7 @@ class ImageRequest(BaseModel):
     n: int = 1  # 생성할 이미지 수 (기본값 제공)
 
 
+
 @router.post("/generate-image")
 async def generate_image(request: ImageRequest):
     """
@@ -31,12 +26,15 @@ async def generate_image(request: ImageRequest):
     """
     try:
 
+        gen = "판타지"
+        them = "좀비물"
         
         # 프롬프트 요약
-        summarized_prompt = await summarize_prompt(genre, world_decription)
+        summarized_prompt = await summarize_prompt(request.prompt, genre=gen, theme=them)
 
-        # 번역기 설정
-        translator = Translator()
+        # 번역기 설정 (deep_translator 사용)
+        # 한글 프롬프트를 영어로 번역
+        translated_prompt = GoogleTranslator(source='ko', target='en').translate(summarized_prompt)
 
         # 한글 프롬프트를 영어로 번역
         translated_prompt = translator.translate(summarized_prompt, src="ko", dest="en").text
