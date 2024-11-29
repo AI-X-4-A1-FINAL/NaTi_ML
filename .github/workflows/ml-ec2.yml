@@ -38,7 +38,7 @@ jobs:
                        --build-arg BUCKET_NAME=${{ secrets.BUCKET_NAME }} \  
                        -t narrativa_ml:latest .
           docker tag narrativa_ml:latest ${{ secrets.DOCKER_EC2_USERNAME }}/narrativa_ml:latest
-          docker push ${{ secrets.DOCKER_EC2_PASSWORD }}/narrativa_ml:latest
+          docker push ${{ secrets.DOCKER_EC2_USERNAME }}/narrativa_ml:latest
 
       # SSH 키 설정
       - name: Set up SSH key
