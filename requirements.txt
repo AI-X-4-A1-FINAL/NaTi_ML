@@ -7,3 +7,4 @@ openai==0.28
 langchain
 boto3
 deep-translator
+uvicorn
