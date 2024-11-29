@@ -1,3 +1,5 @@
+# main.py
+
 from fastapi import FastAPI
 from api.routes import image, story
 from fastapi.middleware.cors import CORSMiddleware
