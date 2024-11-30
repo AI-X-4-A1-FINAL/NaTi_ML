@@ -5,8 +5,8 @@ requests
 python-dotenv
 openai==0.28
 langchain
-langchain_community
-langchain_openai
+langchain-community
+langchain-openai
 boto3
 deep-translator
 uvicorn
