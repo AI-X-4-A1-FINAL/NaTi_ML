@@ -1,34 +1,82 @@
-name: Deploy to EC2
-  uses: appleboy/ssh-action@v0.1.8
-  with:
-    host: ${{ secrets.EC2_HOST_ML }}
-    username: ec2-user
-    key: ${{ secrets.EC2_PRIVATE_KEY_ML }}
-    port: 22
-    script: |
-      # Git과 Docker Compose 설치 확인
-      if ! [ -x "$(command -v git)" ]; then
-        sudo yum install git -y || sudo apt install git -y
-      fi
-      if ! [ -x "$(command -v docker-compose)" ]; then
-        sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        sudo chmod +x /usr/local/bin/docker-compose
-      fi
-      
-      # 프로젝트 디렉토리 설정
-      PROJECT_DIR="/home/ec2-user/project"
-      
-      # Git 클론 또는 pull
-      if [ ! -d "${PROJECT_DIR}/.git" ]; then
-        rm -rf ${PROJECT_DIR}
-        mkdir -p ${PROJECT_DIR}
-        git clone https://${{ secrets.MY_GITHUB_TOKEN }}@github.com/AI-X-4-A1-FINAL/Narrativa_ML.git ${PROJECT_DIR}
-      else
-        cd ${PROJECT_DIR}
-        git pull origin dev
-      fi
-      
-      # Docker Compose 실행
-      cd ${PROJECT_DIR}
-      docker-compose -f ${PROJECT_DIR}/docker-compose.yml --env-file ${PROJECT_DIR}/.env down || true
-      docker-compose -f ${PROJECT_DIR}/docker-compose.yml --env-file ${PROJECT_DIR}/.env up -d --build
+name: CI/CD for EC2 Deployment
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 코드 체크아웃
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Docker Compose 설치
+      - name: Install Docker Compose
+        run: |
+          sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
+
+      # 3. .env 파일 생성
+      - name: Create .env file
+        run: |
+          echo "CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}" > .env
+          echo "OPENAI_KEY=${{ secrets.OPENAI_KEY }}" >> .env
+          echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" >> .env
+          echo "DOCKERHUB_PASSWORD=${{ secrets.DOCKERHUB_PASSWORD }}" >> .env
+          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env
+          echo "AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}" >> .env
+          echo "BUCKET_NAME=${{ secrets.BUCKET_NAME }}" >> .env
+          echo "SSH_PRIVATE_KEY=${{ secrets.EC2_PRIVATE_KEY_ML }}" >> .env
+
+      # 4. .env 파일을 EC2로 복사
+      - name: Copy .env to EC2
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.EC2_HOST_ML }}
+          username: ec2-user
+          key: ${{ secrets.EC2_PRIVATE_KEY_ML }}
+          source: .env
+          target: /home/ec2-user/project/
+
+      # 5. EC2에 배포
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.EC2_HOST_ML }}
+          username: ec2-user
+          key: ${{ secrets.EC2_PRIVATE_KEY_ML }}
+          port: 22
+          script: |
+            # 프로젝트 디렉토리 설정
+            PROJECT_DIR="/home/ec2-user/project"
+
+            # Git 설치 확인 및 설치
+            if ! [ -x "$(command -v git)" ]; then
+              sudo yum install git -y
+            fi
+
+            # Docker Compose 설치 확인 및 설치
+            if ! [ -x "$(command -v docker-compose)" ]; then
+              sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              sudo chmod +x /usr/local/bin/docker-compose
+            fi
+
+            # 프로젝트 클론 또는 업데이트
+            if [ ! -d "${PROJECT_DIR}/.git" ]; then
+              rm -rf ${PROJECT_DIR}
+              mkdir -p ${PROJECT_DIR}
+              git clone https://${{ secrets.MY_GITHUB_TOKEN }}@github.com/AI-X-4-A1-FINAL/Narrativa_ML.git ${PROJECT_DIR}
+            else
+              cd ${PROJECT_DIR}
+              git pull origin dev
+            fi
+
+            # Docker Compose 실행
+            cd ${PROJECT_DIR}
+            docker-compose -f ${PROJECT_DIR}/docker-compose.yml --env-file ${PROJECT_DIR}/.env down || true
+            docker-compose -f ${PROJECT_DIR}/docker-compose.yml --env-file ${PROJECT_DIR}/.env up -d --build
