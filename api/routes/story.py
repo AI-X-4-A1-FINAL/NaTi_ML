@@ -1,103 +1,49 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-import boto3
-import random
-import os
-from typing import List, Optional
-from dotenv import load_dotenv
-from models.story_generator import generate_story
-from boto3.s3.transfer import S3Transfer
-from botocore.exceptions import ClientError
-
-load_dotenv()
+from fastapi import APIRouter, HTTPException, Depends
+from schemas.story_class import StoryGenerationStartRequest, StoryGenerationChatRequest
+from core.s3_manager import S3Manager
+from service.story_service import StoryService
+from models.story_generator import StoryGenerator
 
 router = APIRouter()
 
-# S3 클라이언트 설정
-s3_client = boto3.client(
-    "s3",
-    aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
-    aws_secret_access_key=os.getenv("AWS_SECRET_KEY"),
-    region_name=os.getenv("AWS_REGION")
-)
+s3_manager = S3Manager()
+story_generator = StoryGenerator()
+story_service = StoryService(s3_manager, story_generator)
 
-# S3에서 프롬프트 가져오기
-def get_random_prompt_from_s3(genre: str, bucket_name: str = None) -> str:
-    bucket_name = bucket_name or os.getenv("BUCKET_NAME")
-    try:
-        folder_key = f"{genre}/"  # 예: "Survival/" 또는 "Romance/"
+# 요청 데이터를 의존성으로 처리
+def get_story_generation_start_request(request: StoryGenerationStartRequest):
+    return request
 
-        # S3에서 객체 목록 가져오기
-        response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=folder_key)
+def get_story_generation_chat_request(request: StoryGenerationChatRequest):
+    return request
 
-        if 'Contents' not in response:
-            raise HTTPException(status_code=404, detail="No files found in the specified genre folder")
-
-        # 파일 목록에서 랜덤으로 하나 선택
-        files = [obj['Key'] for obj in response['Contents']]
-        random_file = random.choice(files)
-
-        # 선택된 파일 읽기
-        file_obj = s3_client.get_object(Bucket=bucket_name, Key=random_file)
-        file_content = file_obj['Body'].read().decode('utf-8')
-
-        return file_content
-
-    except ClientError as e:  # boto3에서 발생할 수 있는 예외를 잡기
-        raise HTTPException(status_code=500, detail=f"Error interacting with S3: {str(e)}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
-
-# 요청 모델 정의
-class StoryRequest(BaseModel):
-    genre: str
-    tags: List[str]
-
-# 초기 스토리 생성 엔드포인트
 @router.post("/start")
-def generate_story_endpoint(request: StoryRequest):
+async def generate_story_endpoint(
+    request: StoryGenerationStartRequest = Depends(get_story_generation_start_request)
+):
     try:
-        # S3에서 프롬프트 파일 가져오기
-        prompt = get_random_prompt_from_s3(request.genre)
-        
-        # tags와 프롬프트를 결합하여 스토리 생성에 사용
-        modified_prompt = f"{prompt}\n\nTags: {', '.join(request.tags)}"
-
-        # 스토리 생성
-        response = generate_story(request.genre, modified_prompt)
-        return {"story": response}
+        # 'generate_initial_story' 메서드 호출
+        story = await story_service.generate_initial_story(
+            genre=request.genre, 
+            tags=request.tags
+        )
+        return {"story": story}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating story: {str(e)}")
 
-# 이후 스토리 진행
-class ChatRequest(BaseModel):
-    genre: str
-    currentStage: int
-    initialStory: str
-    userInput: str
-    previousUserInput: str
-    conversationHistory: Optional[List[str]] = None
-
-# 이후 스토리 진행 엔드포인트
 @router.post("/chat")
-def continue_story(request: ChatRequest):
+async def continue_story(
+    request: StoryGenerationChatRequest = Depends(get_story_generation_chat_request)
+):
     try:
-        # conversationHistory가 None일 경우 빈 배열로 처리
-        if request.conversationHistory is None:
-            request.conversationHistory = []
-
-        # 대화 내용 연결
-        conversation_history = "\n".join(request.conversationHistory) 
-        prompt = f"Initial Story: {request.initialStory}\n{conversation_history}\nUser Input: {request.userInput}"
-
-        # 스토리 생성 함수 호출
-        story_response = generate_story(request.genre, prompt, request.userInput)
-        
-        # 대화 내역에 새로운 사용자 입력과 결과를 추가
-        request.conversationHistory.append(f"User: {request.userInput}")
-        request.conversationHistory.append(f"Story: {story_response}")
-        
-        return {"story": story_response, "conversationHistory": request.conversationHistory}
+        # 'continue_story' 메서드 호출
+        conversation_history = request.conversationHistory or []
+        story = await story_service.continue_story(
+            genre=request.genre, 
+            initialStory=request.initialStory, 
+            userInput=request.userInput, 
+            conversation_history=conversation_history
+        )
+        return {"story": story, "conversationHistory": conversation_history}
     except Exception as e:
-        print(f"Error generating story: {e}")
         raise HTTPException(status_code=500, detail=f"Error generating story: {str(e)}")
