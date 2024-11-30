@@ -3,7 +3,7 @@ name: CI/CD for EC2 Deployment
 on:
   push:
     branches:
-      - dev
+      - dev  # main 브랜치에 푸시될 때 실행
 
 jobs:
   build-and-deploy:
@@ -29,23 +29,40 @@ jobs:
       - name: Build Docker image
         run: docker-compose build
 
-      # 5. EC2 서버에 배포
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@v0.1.8
-        with:
-          host: ${{ secrets.EC2_HOST_ML }}
-          username: ec2-user
-          key: ${{ secrets.EC2_PRIVATE_KEY_ML }}
-          port: 22
-          script: |
-            # 1. 프로젝트 디렉토리로 이동
-            cd /home/ec2-user/project || exit
+    # 4. Docker 이미지 푸시 (선택 사항)
+    - name: Push Docker image to Docker Hub
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      run: |
+        echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+        docker tag my-app:latest $DOCKER_USERNAME/my-app:latest
+        docker push $DOCKER_USERNAME/my-app:latest
 
-            # 2. 기존 컨테이너 종료 및 제거
-            docker-compose down || true
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
 
-            # 3. 최신 코드 가져오기
-            git pull origin dev
+    steps:
+    # 1. GitHub 레포지토리 체크아웃
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-            # 4. Docker Compose로 컨테이너 실행
-            docker-compose up -d --build
+    # 2. EC2 서버에 연결 및 애플리케이션 배포
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v0.1.11
+      with:
+        host: ${{ secrets.EC2_HOST_ML }}
+        username: ec2-user
+        key: ${{ secrets.EC2_PRIVATE_KEY_ML }}
+        port: 22
+        script: |
+          # 1. Docker 컨테이너 종료 및 제거
+          docker-compose -f /path/to/docker-compose.yml down || true
+
+          # 2. GitHub에서 최신 코드 가져오기
+          cd /path/to/project || exit
+          git pull origin main
+
+          # 3. Docker Compose로 컨테이너 실행
+          docker-compose -f /path/to/docker-compose.yml up -d --build
