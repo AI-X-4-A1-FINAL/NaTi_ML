@@ -3,14 +3,14 @@ name: CI/CD for EC2 Deployment
 on:
   push:
     branches:
-      - dev
+      - dev  # dev 브랜치에 푸시될 때 실행
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 코드 체크아웃
+      # 1. GitHub 레포지토리 코드 체크아웃
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -21,31 +21,65 @@ jobs:
           sudo chmod +x /usr/local/bin/docker-compose
           docker-compose --version
 
-      # 3. Docker Compose 파일 유효성 검사
-      - name: Validate Docker Compose file
-        run: docker-compose config
+      # 3. 환경변수를 사용해 Docker Compose 빌드
+      - name: Build Docker Compose
+        env:
+          CORS_ORIGINS: ${{ secrets.CORS_ORIGINS }}
+          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          docker-compose build --build-arg CORS_ORIGINS=$CORS_ORIGINS \
+                               --build-arg OPENAI_KEY=$OPENAI_KEY \
+                               --build-arg DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME \
+                               --build-arg DOCKERHUB_PASSWORD=$DOCKERHUB_PASSWORD \
+                               --build-arg AWS_REGION=$AWS_REGION \
+                               --build-arg AWS_SECRET_KEY=$AWS_SECRET_KEY \
+                               --build-arg BUCKET_NAME=$BUCKET_NAME \
+                               --build-arg SSH_PRIVATE_KEY="$SSH_PRIVATE_KEY"
 
-      # 4. Docker 이미지 빌드
-      - name: Build Docker image
-        run: docker-compose build
-
-      # 5. EC2 서버에 배포
+      # 4. EC2 서버에 배포
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.8
         with:
-          host: ${{ secrets.EC2_HOST_ML }}
+          host: ${{ secrets.EC2_HOST }}
           username: ec2-user
-          key: ${{ secrets.EC2_PRIVATE_KEY_ML }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
           port: 22
+          envs: |
+            CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
+            OPENAI_KEY=${{ secrets.OPENAI_KEY }}
+            DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERHUB_PASSWORD=${{ secrets.DOCKERHUB_PASSWORD }}
+            AWS_REGION=${{ secrets.AWS_REGION }}
+            AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}
+            BUCKET_NAME=${{ secrets.BUCKET_NAME }}
+            SSH_PRIVATE_KEY=${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # 1. 프로젝트 디렉토리로 이동
-            cd /home/ec2-user/project || exit
+            # 1. Git 및 Docker Compose 확인/설치
+            if ! [ -x "$(command -v git)" ]; then
+              sudo yum install git -y || sudo apt install git -y
+            fi
+            if ! [ -x "$(command -v docker-compose)" ]; then
+              sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              sudo chmod +x /usr/local/bin/docker-compose
+            fi
 
-            # 2. 기존 컨테이너 종료 및 제거
+            # 2. 프로젝트 디렉토리 확인 및 생성
+            if [ ! -d "/home/ec2-user/project" ]; then
+              mkdir -p /home/ec2-user/project
+              git clone https://${{ secrets.GITHUB_ACCESS_TOKEN }}@github.com/username/repository.git /home/ec2-user/project
+            else
+              cd /home/ec2-user/project || exit
+              git pull origin dev
+            fi
+
+            # 3. 기존 컨테이너 종료 및 제거
             docker-compose down || true
 
-            # 3. 최신 코드 가져오기
-            git pull origin dev
-
             # 4. Docker Compose로 컨테이너 실행
-            docker-compose up -d --build
+            docker-compose --env-file .env up -d --build
