@@ -10,18 +10,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout code
+      # 1. GitHub 레포지토리 코드 체크아웃
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Install Docker Compose
+      # 2. Docker Compose 설치
       - name: Install Docker Compose
         run: |
           sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
           docker-compose --version
 
-      # Create .env file
+      # 3. .env 파일 생성
       - name: Create .env file
         run: |
           echo "CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}" > .env
@@ -31,9 +31,19 @@ jobs:
           echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env
           echo "AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}" >> .env
           echo "BUCKET_NAME=${{ secrets.BUCKET_NAME }}" >> .env
-          echo "SSH_PRIVATE_KEY=${{ secrets.EC2_PRIVATE_KEY_ML }}" >> .env
+          echo "SSH_PRIVATE_KEY=${{ secrets.EC2_PRIVATE_KEY_ML}}" >> .env
 
-      # Deploy to EC2
+      # 4. .env 파일을 EC2로 복사
+      - name: Copy .env to EC2
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          source: .env
+          target: /home/ec2-user/project/.env
+          host: ${{ secrets.EC2_HOST_ML }}
+          username: ec2-user
+          key: ${{ secrets.EC2_PRIVATE_KEY_ML}}
+
+      # 5. EC2에 배포
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.8
         with:
@@ -50,15 +60,16 @@ jobs:
               sudo chmod +x /usr/local/bin/docker-compose
             fi
 
-            # Git clone or pull
-            if [ ! -d "/home/ec2-user/project" ]; then
+            # Git 클론 또는 pull
+            if [ ! -d "/home/ec2-user/project/.git" ]; then
+              rm -rf /home/ec2-user/project  # 기존 디렉토리 삭제
               mkdir -p /home/ec2-user/project
-              git clone https://${{ secrets.MY_GITHUB_TOKEN }}@github.com/username/repository.git /home/ec2-user/project
+              git clone https://${{ secrets.MY_GITHUB_TOKEN }}@github.com/AI-X-4-A1-FINAL/Narrativa_ML.git /home/ec2-user/project
             else
               cd /home/ec2-user/project || exit
               git pull origin dev
             fi
 
-            # Deploy with Docker Compose
+            # Docker Compose로 배포
             docker-compose down || true
             docker-compose --env-file .env up -d --build
