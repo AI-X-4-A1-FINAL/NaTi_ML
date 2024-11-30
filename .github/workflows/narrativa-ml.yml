@@ -29,8 +29,8 @@ jobs:
          OPENAI_KEY="${{ secrets.OPENAI_KEY }}"
          DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
          DOCKERHUB_PASSWORD="${{ secrets.DOCKERHUB_PASSWORD }}"
-         AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}"
-         AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+         AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY }}"
+         AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_KEY }}"
          AWS_REGION="${{ secrets.AWS_REGION }}"
          BUCKET_NAME="${{ secrets.BUCKET_NAME }}"
          SSH_PRIVATE_KEY="${{ secrets.EC2_PRIVATE_KEY_ML }}"
@@ -86,8 +86,8 @@ jobs:
              --build-arg OPENAI_KEY="${{ secrets.OPENAI_KEY }}" \
              --build-arg DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}" \
              --build-arg DOCKERHUB_PASSWORD="${{ secrets.DOCKERHUB_PASSWORD }}" \
-             --build-arg AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
-             --build-arg AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+             --build-arg AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY }}" \
+             --build-arg AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_KEYY }}" \
              --build-arg AWS_REGION="${{ secrets.AWS_REGION }}" \
              --build-arg BUCKET_NAME="${{ secrets.BUCKET_NAME }}" \
              --build-arg SSH_PRIVATE_KEY="${{ secrets.EC2_PRIVATE_KEY_ML }}"
