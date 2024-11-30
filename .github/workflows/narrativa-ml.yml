@@ -53,7 +53,7 @@ jobs:
             # Git clone or pull
             if [ ! -d "/home/ec2-user/project" ]; then
               mkdir -p /home/ec2-user/project
-              git clone https://${{ secrets.GITHUB_ACCESS_TOKEN }}@github.com/username/repository.git /home/ec2-user/project
+              git clone https://${{ secrets.MY_GITHUB_TOKEN }}@github.com/username/repository.git /home/ec2-user/project
             else
               cd /home/ec2-user/project || exit
               git pull origin dev
