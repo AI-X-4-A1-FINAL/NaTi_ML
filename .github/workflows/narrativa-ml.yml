@@ -55,6 +55,8 @@ jobs:
          username: ec2-user
          key: ${{ secrets.EC2_PRIVATE_KEY_ML }}
          port: 22
+         command_timeout: "30m"     # 명령어 타임아웃을 30분으로 설정
+         timeout: "30m"   
          script: |
            PROJECT_DIR="/home/ec2-user/project"
            
