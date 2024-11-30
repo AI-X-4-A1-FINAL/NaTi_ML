@@ -3,46 +3,37 @@ name: CI/CD for EC2 Deployment
 on:
   push:
     branches:
-      - dev  # dev 브랜치에 푸시될 때 실행
+      - dev
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. GitHub 레포지토리 코드 체크아웃
+      # Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Docker Compose 설치
+      # Install Docker Compose
       - name: Install Docker Compose
         run: |
           sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
           docker-compose --version
 
-      # 3. 환경변수를 사용해 Docker Compose 빌드
-      - name: Build Docker Compose
-        env:
-          CORS_ORIGINS: ${{ secrets.CORS_ORIGINS }}
-          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
-          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
-          SSH_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY_ML }}
+      # Create .env file
+      - name: Create .env file
         run: |
-          docker-compose build --build-arg CORS_ORIGINS=$CORS_ORIGINS \
-                               --build-arg OPENAI_KEY=$OPENAI_KEY \
-                               --build-arg DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME \
-                               --build-arg DOCKERHUB_PASSWORD=$DOCKERHUB_PASSWORD \
-                               --build-arg AWS_REGION=$AWS_REGION \
-                               --build-arg AWS_SECRET_KEY=$AWS_SECRET_KEY \
-                               --build-arg BUCKET_NAME=$BUCKET_NAME \
-                               --build-arg EC2_PRIVATE_KEY_ML="$EC2_PRIVATE_KEY_ML"
+          echo "CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}" > .env
+          echo "OPENAI_KEY=${{ secrets.OPENAI_KEY }}" >> .env
+          echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" >> .env
+          echo "DOCKERHUB_PASSWORD=${{ secrets.DOCKERHUB_PASSWORD }}" >> .env
+          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env
+          echo "AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}" >> .env
+          echo "BUCKET_NAME=${{ secrets.BUCKET_NAME }}" >> .env
+          echo "SSH_PRIVATE_KEY=${{ secrets.EC2_PRIVATE_KEY_ML }}" >> .env
 
-      # 4. EC2 서버에 배포
+      # Deploy to EC2
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.8
         with:
@@ -50,17 +41,7 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_PRIVATE_KEY_ML }}
           port: 22
-          envs: |
-            CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
-            OPENAI_KEY=${{ secrets.OPENAI_KEY }}
-            DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-            DOCKERHUB_PASSWORD=${{ secrets.DOCKERHUB_PASSWORD }}
-            AWS_REGION=${{ secrets.AWS_REGION }}
-            AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}
-            BUCKET_NAME=${{ secrets.BUCKET_NAME }}
-            SSH_PRIVATE_KEY=${{ secrets.EC2_PRIVATE_KEY_ML }}
           script: |
-            # 1. Git 및 Docker Compose 확인/설치
             if ! [ -x "$(command -v git)" ]; then
               sudo yum install git -y || sudo apt install git -y
             fi
@@ -69,7 +50,7 @@ jobs:
               sudo chmod +x /usr/local/bin/docker-compose
             fi
 
-            # 2. 프로젝트 디렉토리 확인 및 생성
+            # Git clone or pull
             if [ ! -d "/home/ec2-user/project" ]; then
               mkdir -p /home/ec2-user/project
               git clone https://${{ secrets.GITHUB_ACCESS_TOKEN }}@github.com/username/repository.git /home/ec2-user/project
@@ -78,8 +59,6 @@ jobs:
               git pull origin dev
             fi
 
-            # 3. 기존 컨테이너 종료 및 제거
+            # Deploy with Docker Compose
             docker-compose down || true
-
-            # 4. Docker Compose로 컨테이너 실행
             docker-compose --env-file .env up -d --build
