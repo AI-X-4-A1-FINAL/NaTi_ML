@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import List
-from schemas.story_class import StoryGenerationRequest
+from schemas.story_class import StoryGenerationStartRequest, StoryGenerationChatRequest
 from core.s3_manager import S3Manager
 from service.story_service import StoryService
 from models.story_generator import StoryGenerator
@@ -12,15 +11,18 @@ story_generator = StoryGenerator()
 story_service = StoryService(s3_manager, story_generator)
 
 # 요청 데이터를 의존성으로 처리
-def get_story_generation_request(request: StoryGenerationRequest):
+def get_story_generation_start_request(request: StoryGenerationStartRequest):
+    return request
+
+def get_story_generation_chat_request(request: StoryGenerationChatRequest):
     return request
 
 @router.post("/start")
 async def generate_story_endpoint(
-    request: StoryGenerationRequest = Depends(get_story_generation_request)
+    request: StoryGenerationStartRequest = Depends(get_story_generation_start_request)
 ):
     try:
-        # 하나의 객체로 모든 데이터를 전달
+        # 'generate_initial_story' 메서드 호출
         story = await story_service.generate_initial_story(
             genre=request.genre, 
             tags=request.tags
@@ -31,9 +33,10 @@ async def generate_story_endpoint(
 
 @router.post("/chat")
 async def continue_story(
-    request: StoryGenerationRequest = Depends(get_story_generation_request)
+    request: StoryGenerationChatRequest = Depends(get_story_generation_chat_request)
 ):
     try:
+        # 'continue_story' 메서드 호출
         conversation_history = request.conversationHistory or []
         story = await story_service.continue_story(
             genre=request.genre, 

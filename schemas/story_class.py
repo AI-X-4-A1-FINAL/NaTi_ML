@@ -1,7 +1,11 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
-class StoryGenerationRequest(BaseModel):
+class StoryGenerationStartRequest(BaseModel):
+    genre: str
+    tags: Optional[List[str]] = []
+
+class StoryGenerationChatRequest(BaseModel):
     genre: str
     tags: Optional[List[str]] = []
     currentStage: Optional[int] = 1
