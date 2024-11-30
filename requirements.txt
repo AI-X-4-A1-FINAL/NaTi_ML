@@ -4,10 +4,9 @@ pydantic
 requests
 python-dotenv
 openai==0.28
-langchain
-langchain-community
+langchain>=0.3.8
+langchain-community>=0.3.8
 langchain-openai
 boto3
 deep-translator
-uvicorn
 aioboto3
