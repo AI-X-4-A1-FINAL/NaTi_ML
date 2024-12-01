@@ -6,6 +6,7 @@ python-dotenv
 openai==0.28
 langchain
 langchain_community
+langchain_openai
 boto3
 deep-translator
 uvicorn
