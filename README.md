@@ -36,9 +36,6 @@ $ conda create -n narrativa_ml python=3.12
 # 가상환경 활성화
 $ conda activate narrativa_ml
 
-# PyTorch 설치
-$ conda install pytorch torchvision torchaudio pytorch-cuda=12.4 -c pytorch -c nvidia
-
 # 의존성 설치
 $ pip install -r requirements.txt
 ```
@@ -121,18 +118,22 @@ narrativa-ml/
 ├── api/
 │   ├── routes/
 │   │   ├── story.py
-│   │   ├── image.py
-│   │   └── music.py
+│   │   └── image.py
 │   └── dependencies.py
 ├── core/
 │   ├── config.py
+│   ├── s3_manager.py
 │   └── security.py
 ├── models/
 │   ├── story_generator.py
 │   ├── image_generator.py
-│   └── music_generator.py
-├── tests/
-│   └── test_api.py
+│   └── prompt_summarizer.py
+├── prompt/
+│   └── prompt.py
+├── schemas/
+│   └── story_class.py
+├── service/
+│   └── story_service.py
 ├── main.py
 └── requirements.txt
 ```
