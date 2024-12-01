@@ -16,8 +16,8 @@ class S3Manager:
         bucket_name = bucket_name or self.bucket_name
         async with aioboto3.Session().client(
             "s3",
-            aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
-            aws_secret_access_key=os.getenv("AWS_SECRET_KEY"),
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
             region_name=os.getenv("AWS_REGION"),
         ) as s3_client:
             try:
