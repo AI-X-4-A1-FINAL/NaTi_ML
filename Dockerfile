@@ -37,6 +37,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Python 의존성 파일 복사 및 설치
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN python -c "import aioboto3; print(f'aioboto3 version: {aioboto3.__version__}')"
+RUN python -c "print('All required packages installed successfully')"
 
 # 애플리케이션 코드 복사
 COPY . .
