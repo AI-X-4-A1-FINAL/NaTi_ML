@@ -10,3 +10,4 @@ boto3
 deep-translator
 uvicorn
 aioboto3
+langchain_openai
