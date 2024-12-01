@@ -26,6 +26,14 @@ ENV AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
 ENV BUCKET_NAME=${BUCKET_NAME}
 ENV SSH_PRIVATE_KEY=${SSH_PRIVATE_KEY}
 
+# 시스템 패키지 설치
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    python3-dev \
+    libssl-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 # Python 의존성 파일 복사 및 설치
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
