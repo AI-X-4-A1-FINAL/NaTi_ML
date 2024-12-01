@@ -160,11 +160,6 @@ narrativa-ml/
 
 <br />
 
-<img src="https://github.com/user-attachments/assets/6a1bbf66-b4d6-40b2-afc9-113e37d78884" 
-    alt="js" 
-    width="200" 
-    height="auto" 
-    style="max-width: 100%; height: auto;">
 <img src="https://github.com/user-attachments/assets/6ec7ec21-a9b1-4ebe-932f-c78064dcabe7" 
     alt="se" 
     width="200" 
