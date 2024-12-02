@@ -1,12 +1,14 @@
 import openai
 import os
 from dotenv import load_dotenv
+from openai import OpenAI
 
 # 환경 변수 로드
 load_dotenv()
 
 # OpenAI API 키 설정
 openai.api_key = os.getenv("OPENAI_KEY")
+client = OpenAI(api_key=openai.api_key)
 
 def generate_image_with_dalle(prompt: str, size: str = "1024x1024", n: int = 1) -> dict:
     """
@@ -17,11 +19,16 @@ def generate_image_with_dalle(prompt: str, size: str = "1024x1024", n: int = 1) 
     :return: API 응답 데이터 (dict)
     """
     try:
-        response = openai.Image.create(
+        response = client.images.generate(
             prompt=prompt,
             size=size,
             n=n,
         )
-        return response
+        # print(type(response))
+        # print(response)
+        # print(response.data)
+        image_url = response.data[0].url
+        return image_url
+    
     except Exception as e:
         raise RuntimeError(f"OpenAI API 호출 중 오류 발생: {e}")
