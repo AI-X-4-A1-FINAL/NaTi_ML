@@ -34,6 +34,7 @@ jobs:
          AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}"
          AWS_REGION="${{ secrets.AWS_REGION }}"
          BUCKET_NAME="${{ secrets.BUCKET_NAME }}"
+         API_KEY="${{ secrets.API_KEY }}"
          SSH_PRIVATE_KEY="${{ secrets.EC2_PRIVATE_KEY_ML }}"
          EOF
 
@@ -93,6 +94,7 @@ jobs:
              --build-arg AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
              --build-arg AWS_REGION="${{ secrets.AWS_REGION }}" \
              --build-arg BUCKET_NAME="${{ secrets.BUCKET_NAME }}" \
+             --build-arg API_KEY="${{ secrets.API_KEY }}" \
              --build-arg SSH_PRIVATE_KEY="${{ secrets.EC2_PRIVATE_KEY_ML }}"
            
            docker-compose --env-file ${PROJECT_DIR}/.env down || true

@@ -14,6 +14,7 @@ services:
         AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
         BUCKET_NAME: ${BUCKET_NAME}
         SSH_PRIVATE_KEY: ${SSH_PRIVATE_KEY}
+        API_KEY: ${API_KEY}
     environment:
       - CORS_ORIGINS=${CORS_ORIGINS}
       - OPENAI_KEY=${OPENAI_KEY}
@@ -24,6 +25,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - BUCKET_NAME=${BUCKET_NAME}
       - SSH_PRIVATE_KEY=${SSH_PRIVATE_KEY}
+      - API_KEY=${API_KEY}
     ports:
       - "8050:8050"
     volumes:
