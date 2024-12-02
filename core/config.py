@@ -12,4 +12,6 @@ class Config:
     # OpenAI
     OPENAI_KEY = os.getenv("OPENAI_KEY")
 
+    API_KEY = os.getenv("API_KEY")
+
 config = Config()
