@@ -18,7 +18,9 @@ def generate_image_with_dalle(prompt: str, size: str = "1024x1024", n: int = 1) 
     :param n: 생성할 이미지 수 (기본값: 1)
     :return: API 응답 데이터 (dict)
     """
+    
     try:
+        # prompt = "the image depicts a dark and suspenseful atmosphere with zombies." + prompt
         response = client.images.generate(
             prompt=prompt,
             size=size,

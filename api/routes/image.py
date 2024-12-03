@@ -3,8 +3,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from models.image_generator import generate_image_with_dalle
 from models.prompt_summarizer import summarize_prompt
-from deep_translator import GoogleTranslator  
 import openai  # OpenAI GPT API 사용
+
 
 # 라우터 인스턴스 생성
 router = APIRouter()
@@ -14,6 +14,7 @@ class ImageRequest(BaseModel):
     prompt: str  # 사용자가 입력할 프롬프트
     size: str = "1024x1024"  # 이미지 크기 (기본값 제공)
     n: int = 1  # 생성할 이미지 수 (기본값 제공)
+    genre: str
 
 
 @router.post("/generate-image")
@@ -24,27 +25,24 @@ async def generate_image(request: ImageRequest):
     :return: 생성된 이미지의 URL을 JSON 형식으로 반환
     """
     try:
-
-        gen = "판타지"
-        them = "좀비물"
         
         # 프롬프트 요약
-        summarized_prompt = await summarize_prompt(request.prompt, genre=gen, theme=them)
+        summarized_prompt = await summarize_prompt(request.prompt, genre=request.genre)
 
         # 번역기 설정 (deep_translator 사용)
         # 한글 프롬프트를 영어로 번역
-        translated_prompt = GoogleTranslator(source='ko', target='en').translate(summarized_prompt)
+        # translated_prompt = GoogleTranslator(source='auto', target='en').translate(summarized_prompt)
 
         # DALL·E API 호출
         image_url = generate_image_with_dalle(
-            prompt=translated_prompt, size=request.size, n=request.n
+            prompt=summarized_prompt, size=request.size, n=request.n
         )
 
         # 원본 프롬프트, 요약 프롬프트, 번역 프롬프트와 함께 반환
         return JSONResponse(content={
             "originalPrompt": request.prompt,
             "summarizedPrompt": summarized_prompt,
-            "translatedPrompt": translated_prompt,
+            # "translatedPrompt": translated_prompt,
             "imageUrl": image_url
         })
     
