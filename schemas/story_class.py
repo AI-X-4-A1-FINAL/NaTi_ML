@@ -1,9 +1,10 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Union
 
 class StoryGenerationStartRequest(BaseModel):
     genre: str
-    tags: Optional[List[str]] = []
+    # tags: Optional[List[str]] = []
+    # prompt: str
 
 class StoryGenerationChatRequest(BaseModel):
     genre: str
@@ -12,4 +13,4 @@ class StoryGenerationChatRequest(BaseModel):
     initialStory: Optional[str] = ""
     userInput: Optional[str] = ""
     previousUserInput: Optional[str] = ""
-    conversationHistory: Optional[List[str]] = None
+    conversationHistory: Union[List[str], str] = []

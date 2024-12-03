@@ -1,70 +1,68 @@
 import os
+import random
 from dotenv import load_dotenv
 from langchain.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI  
-from langchain.schema.output_parser import StrOutputParser
-from schemas.story_class import StoryGenerationStartRequest, StoryGenerationChatRequest
+from langchain.chains import LLMChain
+from langchain_community.chat_models import ChatOpenAI
+from langchain.memory import ConversationBufferMemory
+import logging
 
+# 환경 변수 로드
 load_dotenv()
 
+# LangChain 구성
+openai_key = os.getenv("OPENAI_KEY")
+if not openai_key:
+    raise ValueError("OPENAI_KEY 환경 변수를 설정해주세요.")
+
+llm = ChatOpenAI(
+    temperature=0.4,
+    model="gpt-4o-mini",
+    openai_api_key=openai_key
+)
+memory = ConversationBufferMemory(return_messages=True)
+
 class StoryGenerator:
-    def __init__(self, api_key: str = os.getenv("OPENAI_KEY")):
-        self.api_key = api_key
-        self.model = ChatOpenAI(openai_api_key=self.api_key, 
-                                model="gpt-4o-mini",
-                                temperature=0.2,
-                                max_tokens=300)
-        self.parser = StrOutputParser()
+    def __init__(self, prompt_base_path: str):
+        self.llm = llm
+        self.memory = memory
+        self.prompt_base_path = prompt_base_path  # prompts 폴더 경로
 
-    # /start 엔드포인트
-    async def generate_initial_story(self, request: StoryGenerationStartRequest) -> str:
+    def read_prompt(self, genre: str) -> str:
+        """장르 기반으로 프롬프트를 읽어오는 함수."""
+        genre_path = os.path.join(self.prompt_base_path, genre)
+
+        if not os.path.exists(genre_path):
+            raise FileNotFoundError(f"Genre folder '{genre}' not found at {genre_path}.")
+
+        txt_files = [f for f in os.listdir(genre_path) if f.endswith(".txt")]
+        if not txt_files:
+            raise FileNotFoundError(f"No prompt files found in genre folder '{genre}'.")
+
+        selected_file = random.choice(txt_files)
+        file_path = os.path.join(genre_path, selected_file)
+
+        with open(file_path, "r", encoding="utf-8") as file:
+            return file.read()
+
+    async def generate_initial_story(self, genre: str) -> str:
+        """장르와 로컬 프롬프트를 기반으로 세계관 생성."""
         try:
-            genre = request.genre
-            tags = request.tags
+            prompt = self.read_prompt(genre)
 
+            # 시스템 템플릿 구성
             system_template = (
-                f"You are an expert in storytelling. "
-                f"Generate a story in the '{genre}' genre based on the following tags: {tags}."
+                f"You have to print it out in Korean. You are a storyteller. Generate a story in the '{genre}' genre using the following prompt: {prompt}."
             )
-
             prompt_template = ChatPromptTemplate.from_messages([("system", system_template)])
 
-            chain = prompt_template | self.model | self.parser
-            result = await chain.ainvoke({"genre": genre, "tags": tags})
+            chain = LLMChain(llm=self.llm, prompt=prompt_template)
+            story = chain.run({"genre": genre, "prompt": prompt})
 
-            return result
+            # 생성된 스토리를 메모리에 추가
+            self.memory.chat_memory.add_message({"role": "system", "content": story})
+            return story
 
         except Exception as e:
+            logging.error(f"Error generating story: {e}")
             raise Exception(f"Error generating story: {str(e)}")
-
-    # /chat 엔드포인트
-    async def continue_story(self, request: StoryGenerationChatRequest) -> str:
-        try:
-            genre = request.genre
-            initial_story = request.initialStory
-            user_input = request.userInput
-            conversation_history = request.conversationHistory or ""
-
-            system_template = (
-                f"You are an expert in storytelling. "
-                f"Continue the story in the '{genre}' genre based on the following initial story: {initial_story}."
-            )
-            if conversation_history:
-                system_template += f"\nPrevious conversation: {conversation_history}"
-            if user_input:
-                system_template += f"\n\nThe user input: {user_input}. Continue the story accordingly."
-
-            prompt_template = ChatPromptTemplate.from_messages([("system", system_template)])
-
-            chain = prompt_template | self.model | self.parser
-            result = await chain.ainvoke({
-                "genre": genre, 
-                "initial_story": initial_story,
-                "user_input": user_input,
-                "conversation_history": conversation_history
-            })
-
-            return result
-
-        except Exception as e:
-            raise Exception(f"Error continuing story: {str(e)}")
