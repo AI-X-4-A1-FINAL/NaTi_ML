@@ -1,24 +1,29 @@
-from fastapi import APIRouter, HTTPException, Depends
-from schemas.story_class import StoryGenerationStartRequest
+# api/routes/story.py
+
+from fastapi import APIRouter, HTTPException
+from schemas.story_class import (
+    StoryGenerationStartRequest,
+    StoryGenerationChatRequest,
+    StoryResponse
+)
 from service.story_service import StoryService
 from models.story_generator import StoryGenerator
 
-import os
-
 router = APIRouter()
+story_service = StoryService(story_generator=StoryGenerator())
 
-# StoryGenerator와 StoryService 초기화
-prompt_base_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../prompts")
-story_generator = StoryGenerator(prompt_base_path=prompt_base_path)
-story_service = StoryService(story_generator=story_generator)
-
-@router.post("/start")
+@router.post("/start", response_model=StoryResponse)
 async def generate_story_endpoint(request: StoryGenerationStartRequest):
     try:
-        # 장르 기반 스토리 생성
-        story = await story_service.generate_initial_story(genre=request.genre)
-        return {"story": story}
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        return await story_service.generate_initial_story(genre=request.genre)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating story: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/continue", response_model=StoryResponse)
+async def continue_story_endpoint(request: StoryGenerationChatRequest):
+    try:
+        return await story_service.continue_story(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

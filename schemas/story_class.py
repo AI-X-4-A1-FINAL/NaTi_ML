@@ -1,16 +1,17 @@
-from pydantic import BaseModel
-from typing import List, Optional, Union
+# schemas/story_class.py
+
+from pydantic import BaseModel, Field
+from typing import List, Optional
 
 class StoryGenerationStartRequest(BaseModel):
-    genre: str
-    # tags: Optional[List[str]] = []
-    # prompt: str
+    genre: str = Field(..., description="Story genre")
 
 class StoryGenerationChatRequest(BaseModel):
-    genre: str
-    tags: Optional[List[str]] = []
-    currentStage: Optional[int] = 1
-    initialStory: Optional[str] = ""
-    userInput: Optional[str] = ""
-    previousUserInput: Optional[str] = ""
-    conversationHistory: Union[List[str], str] = []
+    genre: str = Field(..., description="Story genre")
+    user_choice: str = Field(..., description="User's selected choice (1, 2, or 3)")
+    story_id: str = Field(..., description="Story session ID")
+
+class StoryResponse(BaseModel):
+    story: str = Field(..., description="Generated story text")
+    choices: List[str] = Field(..., description="Available choices")
+    story_id: str = Field(..., description="Story session ID")
