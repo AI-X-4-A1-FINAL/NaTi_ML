@@ -20,7 +20,7 @@ async def summarize_prompt(prompt: str, genre: str = None) -> str:
     try:
         # 먼저 원본 프롬프트를 요약
         response = openai.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": (
                     "Summarize and translate the following prompt into English. "
