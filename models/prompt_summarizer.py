@@ -40,8 +40,8 @@ async def summarize_prompt(prompt: str, genre: str = None) -> str:
         style = ".. Render this scene in a realistic style."
         
         # genre에 따라 사전 정의된 프롬프트 설정
-        if genre == "재난":
-            newPrompt = "Post-apocalyptic landscape with ruined buildings and overgrown vegetation. " + summarized_prompt + style
+        if genre == "Survival":
+            newPrompt = "very depressed atmosphere " + summarized_prompt + style
         elif genre == "좀비":
             newPrompt = "Post-apocalyptic scene with abandoned streets and hordes of zombies." + summarized_prompt + style
         elif genre == "외계인":

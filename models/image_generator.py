@@ -11,7 +11,7 @@ openai.api_key = os.getenv("OPENAI_KEY")
 client = OpenAI(api_key=openai.api_key)
 
 
-def generate_image_with_dalle(prompt: str, size: str = "1024x1024", n: int = 1) -> str:
+def generate_image_with_dalle(prompt: str, size: str = "256x256", n: int = 1) -> str:
     """
     DALL·E API를 사용하여 이미지를 생성하는 함수
     :param prompt: 이미지 생성에 사용할 프롬프트
