@@ -1,21 +1,20 @@
-# models/story_generator.py
-
 import os
-from typing import Optional, Dict, Any
+from typing import Optional
 from dotenv import load_dotenv
 from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain.schema.output_parser import StrOutputParser
-from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationBufferWindowMemory
 
 load_dotenv()
 
 class StoryGenerator:
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None, s3_manager=None):
         self.api_key = api_key or os.getenv("OPENAI_KEY")
         if not self.api_key:
             raise ValueError("OpenAI API key is required")
             
+        self.s3_manager = s3_manager
         self.model = ChatOpenAI(
             openai_api_key=self.api_key,
             model="gpt-4o-mini",
@@ -23,24 +22,28 @@ class StoryGenerator:
             max_tokens=500
         )
         self.parser = StrOutputParser()
-        self.memory = ConversationBufferMemory(return_messages=True)
+        self.memory = ConversationBufferWindowMemory(k=5, return_messages=True)
 
     async def generate_initial_story(self, genre: str) -> str:
         try:
+            # S3에서 프롬프트 가져오기
+            base_prompt = await self.s3_manager.get_random_prompt(genre)
+            
             system_template = (
                 "You are a master storyteller specializing in narrative creation. "
-                f"Create an immersive and compelling story in the {genre} genre.\n"
+                f"{base_prompt}\n"
                 "The story should be written in Korean, maintaining proper narrative flow "
                 "and cultural context. Keep the response under 500 characters. "
                 "End with exactly 3 survival choices. Format: 'Story: [text]\nChoices: [1,2,3]'"
             )
 
-            prompt_template = ChatPromptTemplate.from_messages([
-                ("system", system_template)
-            ])
+            prompt_template = ChatPromptTemplate.from_template(system_template)
+            chain = prompt_template | self.model | self.parser  # RunnableSequence-style chain
 
-            chain = prompt_template | self.model | self.parser
             result = await chain.ainvoke({})
+            
+            if not result:
+                raise ValueError("No story generated.")
             
             self.memory.save_context({"input": "Story begins"}, {"output": result})
             return result.strip()
@@ -50,7 +53,7 @@ class StoryGenerator:
 
     async def continue_story(self, request_str: str) -> str:
         try:
-            conversation_history = self.memory.load_memory_variables({})["history"]
+            conversation_history = self.memory.load_memory_variables({}).get("history", [])
             
             system_template = (
                 "You are a master storyteller continuing an ongoing narrative. "
@@ -61,16 +64,17 @@ class StoryGenerator:
                 "End with exactly 3 new choices. Format: 'Story: [text]\nChoices: [1,2,3]'"
             )
 
-            prompt_template = ChatPromptTemplate.from_messages([
-                ("system", system_template)
-            ])
+            prompt_template = ChatPromptTemplate.from_template(system_template)
+            chain = prompt_template | self.model | self.parser  # RunnableSequence-style chain
 
-            chain = prompt_template | self.model | self.parser
             result = await chain.ainvoke({
                 "conversation_history": conversation_history,
                 "user_input": request_str
             })
-            
+
+            if not result:
+                raise ValueError("No continuation generated.")
+
             self.memory.save_context({"input": request_str}, {"output": result})
             return result.strip()
 
