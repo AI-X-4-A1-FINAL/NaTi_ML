@@ -1,0 +1,53 @@
+name: Deploy to Ubuntu Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-docker-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
+
+      - name: Detect requirements.txt changes
+        id: req_check
+        run: |
+          if [ "$(git log -1 --pretty=format:%H -- requirements.txt)" != "$(git hash-object requirements.txt)" ]; then
+            echo "::set-output name=changed::true"
+          else
+            echo "::set-output name=changed::false"
+          fi
+
+      - name: Build and Run Docker Container
+        if: steps.req_check.outputs.changed == 'true'
+        run: |
+          echo "Building Docker container as requirements.txt has changed..."
+          docker buildx build \
+            --cache-from=type=local,src=/tmp/.buildx-cache \
+            --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max \
+            -t my_fastapi_app .
+          docker ps -q --filter "name=fastapi_app" | xargs -r docker stop
+          docker ps -a -q --filter "name=fastapi_app" | xargs -r docker rm
+          docker run -d --name fastapi_app -p 8050:8050 my_fastapi_app
+
+      - name: Skip Docker Build
+        if: steps.req_check.outputs.changed == 'false'
+        run: echo "Skipping Docker build as requirements.txt has not changed."
+
+      - name: Verify Deployment
+        run: curl -f http://localhost:8050 || echo "Deployment verification failed"

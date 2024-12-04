@@ -1,0 +1,32 @@
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        CORS_ORIGINS: ${CORS_ORIGINS}
+        OPENAI_KEY: ${OPENAI_KEY}
+        DOCKERHUB_USERNAME: ${DOCKERHUB_USERNAME}
+        DOCKERHUB_PASSWORD: ${DOCKERHUB_PASSWORD}
+        AWS_REGION: ${AWS_REGION}
+        AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+        AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+        BUCKET_NAME: ${BUCKET_NAME}
+        SSH_PRIVATE_KEY: ${SSH_PRIVATE_KEY}
+        API_KEY: ${API_KEY}
+    environment:
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - OPENAI_KEY=${OPENAI_KEY}
+      - DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME}
+      - DOCKERHUB_PASSWORD=${DOCKERHUB_PASSWORD}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - BUCKET_NAME=${BUCKET_NAME}
+      - SSH_PRIVATE_KEY=${SSH_PRIVATE_KEY}
+      - API_KEY=${API_KEY}
+    ports:
+      - "8050:8050"
+    volumes:
+      - ~/.aws:/root/.aws:ro

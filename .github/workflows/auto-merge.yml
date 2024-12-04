@@ -1,0 +1,67 @@
+name: Auto Merge feat/** into dev Script
+
+on:
+  schedule:
+    - cron: "15 15 * * *"
+  workflow_dispatch: # 수동 실행 트리거 추가
+
+permissions: 
+  contents: write
+
+jobs:
+  merge_and_release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch all branches
+        run: git fetch --all
+
+      - name: Merge feat/** branches into dev
+        run: |
+          git checkout dev
+
+          for branch in $(git branch -r | grep "origin/feat/" | sed 's|origin/||'); do
+            echo "Merging $branch into dev"
+            if ! git merge --no-ff --no-edit "$branch"; then
+              echo "WARNING: Conflict in $branch, manual resolution required"
+            fi
+          done
+
+      - name: Push changes to dev
+        run: git push origin dev
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile', '**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
+            ${{ runner.os }}-
+
+      - name: Build and Push Docker Image
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+          IMAGE_NAME: stjoo0925/narrativa_ml
+        run: |
+          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+          docker buildx build \
+            --cache-from=type=local,src=/tmp/.buildx-cache \
+            --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max \
+            --load \
+            -t $IMAGE_NAME:latest .
+          docker push $IMAGE_NAME:latest

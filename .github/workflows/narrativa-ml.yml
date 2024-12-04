@@ -1,0 +1,101 @@
+name: CI/CD for EC2 Deployment
+
+on:
+ push:
+   branches:
+     - main
+   workflow_dispatch:  
+
+jobs:
+ build-and-deploy:
+   runs-on: ubuntu-latest
+
+   steps:
+     # 1. 코드 체크아웃
+     - name: Checkout code
+       uses: actions/checkout@v3
+
+    #  # 2. Docker Compose 설치
+    #  - name: Install Docker Compose
+    #    run: |
+    #      sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    #      sudo chmod +x /usr/local/bin/docker-compose
+    #      docker-compose --version
+
+     # 3. .env 파일 생성
+     - name: Create .env file
+       run: |
+         cat > .env << EOF
+         CORS_ORIGINS="${{ secrets.CORS_ORIGINS }}"
+         OPENAI_KEY="${{ secrets.OPENAI_KEY }}"
+         DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
+         DOCKERHUB_PASSWORD="${{ secrets.DOCKERHUB_PASSWORD }}"
+         AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}"
+         AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+         AWS_REGION="${{ secrets.AWS_REGION }}"
+         BUCKET_NAME="${{ secrets.BUCKET_NAME }}"
+         API_KEY="${{ secrets.API_KEY }}"
+         SSH_PRIVATE_KEY="${{ secrets.EC2_PRIVATE_KEY_ML }}"
+         EOF
+
+     # 4. .env 파일을 EC2로 복사
+     - name: Copy .env to EC2
+       uses: appleboy/scp-action@v0.1.4
+       with:
+         host: ${{ secrets.EC2_HOST_ML }}
+         username: ec2-user
+         key: ${{ secrets.EC2_PRIVATE_KEY_ML }}
+         source: .env
+         target: /home/ec2-user/project/
+         overwrite: true
+
+     # 5. EC2에 배포
+     - name: Deploy to EC2
+       uses: appleboy/ssh-action@v0.1.8
+       with:
+         host: ${{ secrets.EC2_HOST_ML }}
+         username: ec2-user
+         key: ${{ secrets.EC2_PRIVATE_KEY_ML }}
+         port: 22
+         command_timeout: "30m"     # 명령어 타임아웃을 30분으로 설정
+         timeout: "30m"   
+         script: |
+           PROJECT_DIR="/home/ec2-user/project"
+           
+           # Git 설치 확인 및 설치
+           if ! [ -x "$(command -v git)" ]; then
+             sudo yum install git -y
+           fi
+           
+           # Docker Compose 설치 확인 및 설치
+           if ! [ -x "$(command -v docker-compose)" ]; then
+             sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+             sudo chmod +x /usr/local/bin/docker-compose
+           fi
+           
+           # 프로젝트 클론 또는 업데이트
+           if [ ! -d "${PROJECT_DIR}/.git" ]; then
+             rm -rf ${PROJECT_DIR}
+             mkdir -p ${PROJECT_DIR}
+             git clone https://${{ secrets.MY_GITHUB_TOKEN }}@github.com/AI-X-4-A1-FINAL/Narrativa_ML.git ${PROJECT_DIR}
+           else
+             cd ${PROJECT_DIR}
+             git pull origin dev
+           fi
+           
+           # Docker Compose 실행
+           cd ${PROJECT_DIR}
+           docker-compose build \
+             --build-arg CORS_ORIGINS="${{ secrets.CORS_ORIGINS }}" \
+             --build-arg OPENAI_KEY="${{ secrets.OPENAI_KEY }}" \
+             --build-arg DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}" \
+             --build-arg DOCKERHUB_PASSWORD="${{ secrets.DOCKERHUB_PASSWORD }}" \
+             --build-arg AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
+             --build-arg AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+             --build-arg AWS_REGION="${{ secrets.AWS_REGION }}" \
+             --build-arg BUCKET_NAME="${{ secrets.BUCKET_NAME }}" \
+             --build-arg API_KEY="${{ secrets.API_KEY }}" \
+             --build-arg SSH_PRIVATE_KEY="${{ secrets.EC2_PRIVATE_KEY_ML }}"
+           
+           docker-compose --env-file ${PROJECT_DIR}/.env down || true
+           docker-compose --env-file ${PROJECT_DIR}/.env up -d

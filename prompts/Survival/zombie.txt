@@ -1,0 +1,14 @@
+[STORY]
+The zombie virus has spread across the world, and the extinction of humanity is near. You must survive in the zombie apocalypse.
+
+[CHOICES]
+Present exactly 3 choices that include:
+1. Cautious approach (focus on stealth/safety)
+2. Balanced strategy (mix of risk and safety)
+3. Aggressive action (high risk, high reward)
+Each choice should consider:
+- Resource management
+- Zombie presence and types
+- Environmental advantages/disadvantages
+- Long-term survival impact
+Format: "Choices: [1. Choice text, 2. Choice text, 3. Choice text]"
