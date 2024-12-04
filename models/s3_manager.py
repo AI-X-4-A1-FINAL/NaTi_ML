@@ -1,5 +1,3 @@
-# models/s3_manager.py
-
 import os
 import random
 from typing import Optional
@@ -23,15 +21,38 @@ class S3Manager:
             region_name=os.getenv("AWS_REGION"),
         ) as s3_client:
             try:
-                folder_key = f"{genre}/"
-                response = await s3_client.list_objects_v2(Bucket=bucket_name, Prefix=folder_key)
+                # 1. S3 객체 목록 가져오기
+                response = await s3_client.list_objects_v2(Bucket=bucket_name)
+                if "Contents" not in response or not response["Contents"]:
+                    raise HTTPException(status_code=404, detail="No files found in the bucket")
 
-                if "Contents" not in response:
-                    raise HTTPException(status_code=404, detail="No files found in the specified genre folder")
+                # 2. 태그가 일치하는 객체 필터링
+                matching_files = []
+                for obj in response["Contents"]:
+                    object_key = obj["Key"]
 
-                files = [obj["Key"] for obj in response["Contents"]]
-                random_file = random.choice(files)
+                    # 객체 태그 가져오기
+                    try:
+                        tag_response = await s3_client.get_object_tagging(
+                            Bucket=bucket_name,
+                            Key=object_key
+                        )
+                        tags = tag_response.get("TagSet", [])
 
+                        # 태그가 genre=survival인 객체 필터링
+                        if any(tag["Key"] == "genre" and tag["Value"] == genre for tag in tags):
+                            matching_files.append(object_key)
+                    except ClientError as e:
+                        print(f"Error fetching tags for {object_key}: {e}")
+                        continue
+
+                if not matching_files:
+                    raise HTTPException(status_code=404, detail=f"No files with tag genre={genre} found")
+
+                # 3. 랜덤 파일 선택
+                random_file = random.choice(matching_files)
+
+                # 4. 선택한 파일 내용 가져오기
                 file_obj = await s3_client.get_object(Bucket=bucket_name, Key=random_file)
                 return (await file_obj["Body"].read()).decode("utf-8")
 
