@@ -8,9 +8,16 @@ from schemas.story_class import (
 )
 from service.story_service import StoryService
 from models.story_generator import StoryGenerator
+from models.s3_manager import S3Manager
 
 router = APIRouter()
-story_service = StoryService(story_generator=StoryGenerator())
+
+# S3Manager 초기화
+s3_manager = S3Manager()
+
+# StoryGenerator에 S3Manager 주입
+story_generator = StoryGenerator(s3_manager=s3_manager)
+story_service = StoryService(story_generator=story_generator)
 
 @router.post("/start", response_model=StoryResponse)
 async def generate_story_endpoint(request: StoryGenerationStartRequest):
