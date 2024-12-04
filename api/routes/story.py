@@ -29,8 +29,14 @@ async def generate_story_endpoint(request: StoryGenerationStartRequest):
 @router.post("/continue", response_model=StoryResponse)
 async def continue_story_endpoint(request: StoryGenerationChatRequest):
     try:
-        return await story_service.continue_story(request)
+        print(f"[Continue Story Endpoint] Received request: {request}")
+        response = await story_service.continue_story(request)
+        print(f"[Continue Story Endpoint] Generated response: {response}")
+        return response
     except ValueError as e:
+        print(f"[Continue Story Endpoint] Validation error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        print(f"[Continue Story Endpoint] Server error: {str(e)}")
+        print(f"Error type: {type(e)}")
         raise HTTPException(status_code=500, detail=str(e))
