@@ -38,14 +38,21 @@ class StoryGenerator:
         self.parser = StrOutputParser()
         self.memory = ConversationBufferWindowMemory(k=5, return_messages=True)
         self.story_id = None
-        
+        self.fixed_prompt = None
+
+
     async def generate_initial_story(self, genre: str) -> Dict[str, str]:
         try:
             self.story_id = str(uuid.uuid4())
             print(f"[Initial Story] Generated new story_id: {self.story_id}")
             
-            base_prompt = await self.s3_manager.get_random_prompt(genre)
-            print(f"[Initial Story] Retrieved base prompt from S3")
+            # S3에서 랜덤 프롬프트 가져오기
+            if not self.fixed_prompt:  # 고정된 프롬프트가 없을 때만 랜덤으로 가져옴
+                self.fixed_prompt = await self.s3_manager.get_random_prompt(genre)
+                print(f"[Initial Story] Retrieved and fixed base prompt from S3")
+
+            base_prompt = self.fixed_prompt
+            print(f"[Initial Story] Using fixed prompt: {base_prompt[:50]}...") 
             
             self.memory.save_context({"input": "System"}, {"output": base_prompt})
 
@@ -54,7 +61,7 @@ class StoryGenerator:
                 f"{base_prompt}\n"
                 "The story should be written in Korean, maintaining proper narrative flow "
                 "and cultural context. Keep the response under 500 characters. "
-                "End with exactly 3 survival choices. Format: 'Story: [text]\nChoices: [1,2,3]'"
+                "End with exactly 3 survival choices. Give the option to choose a character. Format: 'Story: [text]\nChoices: [1,2,3]'"
             )
 
             prompt_template = ChatPromptTemplate.from_template(system_template)
@@ -102,6 +109,11 @@ class StoryGenerator:
                 self.story_id = str(uuid.uuid4())
                 print(f"[Continue Story] Generated new story_id: {self.story_id}")
             
+            # 고정된 초기 프롬프트 사용
+            base_prompt = self.fixed_prompt
+            if not base_prompt:
+                raise Exception("Fixed prompt not found. Initial story must be generated first.")
+
             conversation_history = self.memory.load_memory_variables({}).get("history", [])
             print(f"[Continue Story] Current conversation history: {conversation_history}")
             
@@ -109,7 +121,7 @@ class StoryGenerator:
                 "You are a master storyteller continuing an ongoing narrative. "
                 "Based on the previous context and user's choice, continue the story.\n"
                 "Previous context: {conversation_history}\n"
-                "User input: {user_input}\n"
+                "User input: {base_prompt}\n"
                 "Continue the story in Korean, keeping response under 500 characters. "
                 "End with exactly 3 new choices. Format: 'Story: [text]\nChoices: [1,2,3]'"
             )
@@ -119,6 +131,7 @@ class StoryGenerator:
             
             result = await chain.ainvoke({
                 "conversation_history": conversation_history,
+                "base_prompt": base_prompt,  # 고정된 프롬프트 전달
                 "user_input": request.get("user_choice", "")
             })
             
