@@ -15,3 +15,7 @@ class StoryResponse(BaseModel):
     story: str = Field(..., description="Generated story text")
     choices: List[str] = Field(..., description="Available choices")
     story_id: str = Field(..., description="Story session ID")
+
+
+class StoryEndRequest(BaseModel):
+    story_id: str = Field(..., description="Story session ID")

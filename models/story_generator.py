@@ -9,7 +9,6 @@ from langchain.memory import ConversationBufferWindowMemory
 from typing import Optional, Dict
 import random
 
-
 load_dotenv()
 
 class StreamingCallbackHandler(BaseCallbackHandler):
@@ -39,7 +38,6 @@ class StoryGenerator:
         self.memory = ConversationBufferWindowMemory(k=5, return_messages=True)
         self.story_id = None
         self.fixed_prompt = None
-
 
     async def generate_initial_story(self, genre: str) -> Dict[str, str]:
         try:
@@ -78,7 +76,7 @@ class StoryGenerator:
                 print("[Initial Story] ERROR: Invalid response format")
                 print(f"Raw response: {result}")
                 raise ValueError("Invalid story format: missing Story or Choices section")
-                
+            
             # Story와 Choices 분리
             parts = result.split("\nChoices:")
             story = parts[0].replace("Story:", "").strip()
@@ -112,7 +110,7 @@ class StoryGenerator:
             # 고정된 초기 프롬프트 사용
             base_prompt = self.fixed_prompt
             if not base_prompt:
-                raise Exception("Fixed prompt not found. Initial story must be generated first.")
+                raise Exception("Fixed prompt not found. Initial story must be generated first.")   
 
             conversation_history = self.memory.load_memory_variables({}).get("history", [])
             print(f"[Continue Story] Current conversation history: {conversation_history}")
@@ -131,7 +129,7 @@ class StoryGenerator:
             
             result = await chain.ainvoke({
                 "conversation_history": conversation_history,
-                "base_prompt": base_prompt,  # 고정된 프롬프트 전달
+                "base_prompt": base_prompt, 
                 "user_input": request.get("user_choice", "")
             })
             
@@ -165,3 +163,38 @@ class StoryGenerator:
             print(f"[Continue Story] Error type: {type(e)}")
             print(f"[Continue Story] Full error details: {e.__dict__}")
             raise Exception(f"Error continuing story: {str(e)}")
+        
+    async def generate_ending_story(self, conversation_history: list) -> dict:
+        """
+        엔딩 스토리를 생성하는 로직
+        """
+        try:
+            print(f"[Ending Story] Using conversation history: {conversation_history}")
+            
+            # 엔딩 프롬프트 템플릿 정의
+            system_template = (
+                "You are a master storyteller concluding an epic narrative. "
+                "Based on the conversation history provided, create a compelling ending to the story.\n"
+                "Conversation history: {conversation_history}\n"
+                "Conclude the story in Korean, keeping the response under 500 characters. "
+                "No choices are needed, just a final closure to the narrative."
+            )
+            
+            prompt_template = ChatPromptTemplate.from_template(system_template)
+            chain = prompt_template | self.model | self.parser
+            
+            # 체인 실행
+            result = await chain.ainvoke({
+                "conversation_history": conversation_history
+            })
+            
+            print(f"[Ending Story] Generated ending: {result}")
+            
+            if not result:
+                raise ValueError("No ending generated.")
+            
+            return {"story": result.strip()}
+        
+        except Exception as e:
+            print(f"[Ending Story] ERROR: {str(e)}")
+            raise Exception(f"Error generating ending story: {str(e)}")
