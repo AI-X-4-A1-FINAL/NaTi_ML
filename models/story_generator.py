@@ -18,7 +18,9 @@ class StreamingCallbackHandler(BaseCallbackHandler):
 
 
 class StoryGenerator:
+    
     def __init__(self, api_key: Optional[str] = None, s3_manager=None):
+        
         self.api_key = api_key or os.getenv("OPENAI_KEY")
         if not self.api_key:
             raise ValueError("OpenAI API key is required")
@@ -27,7 +29,7 @@ class StoryGenerator:
         self.model = ChatOpenAI(
             openai_api_key=self.api_key,
             model="gpt-4o-mini",
-            temperature=0.7,
+            temperature=0.3,
             max_tokens=500,
             streaming=True,
             callbacks=[StreamingCallbackHandler()]
@@ -46,12 +48,14 @@ class StoryGenerator:
             system_template = (
                 "You are a master storyteller specializing in narrative creation. "
                 f"{base_prompt}\n"
-                "The story should be written in Korean, maintaining proper narrative flow "
-                "and cultural context. Keep the response under 500 characters. "
+                "The story should be written in Korean"
+                "It should closely follow the content and flow of the prompt, maintaining consistency."
+                "Keep the response under 500 characters. "
                 "End with exactly 3 survival choices. Format: 'Story: [text]\nChoices: [1,2,3]'"
             )
-
+        
             prompt_template = ChatPromptTemplate.from_template(system_template)
+            print(f"Prompt Used: {system_template}")
 
             handler = StreamingCallbackHandler()
             chain = prompt_template | self.model | self.parser
@@ -62,7 +66,6 @@ class StoryGenerator:
             if not result:
                 raise ValueError("No story generated.")
             
-            self.memory.save_context({"input": "Story begins"}, {"output": result})
             return result.strip()
 
         except Exception as e:
@@ -75,18 +78,21 @@ class StoryGenerator:
             formatted_history = "\n".join(
                     [f"{msg['role']}: {msg['content']}" for msg in conversation_history]
                 )
+            print(f"Conversation History: {conversation_history}")
+
 
             system_template = (
-                "You are a master storyteller continuing an ongoing narrative. "
-                "Based on the previous context and user's choice, continue the story.\n"
-                "Previous context: {conversation_history}\n"
+                "You are a storyteller."
+                "Please refer to the prompt as much as possible to maintain the context."
+                "Remember the previous content: {conversation_history}\n"
                 "User input: {user_input}\n"
-                "Continue the story in Korean, keeping response under 500 characters. "
+                "You must respond in Korean and keep your reply under 500 characters."
                 "End with exactly 3 new choices. Format: 'Story: [text]\nChoices: [1,2,3]'"
             )
 
             prompt_template = ChatPromptTemplate.from_template(system_template)
-            
+            print(f"Prompt Used: {prompt}")
+
             handler = StreamingCallbackHandler()
             chain = prompt_template | self.model | self.parser
             
