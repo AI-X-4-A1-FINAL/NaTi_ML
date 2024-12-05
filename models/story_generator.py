@@ -9,6 +9,7 @@ from langchain.memory import ConversationBufferWindowMemory
 from typing import Optional, Dict
 import random
 
+
 load_dotenv()
 
 class StreamingCallbackHandler(BaseCallbackHandler):
@@ -24,7 +25,7 @@ class StoryGenerator:
         self.api_key = api_key or os.getenv("OPENAI_KEY")
         if not self.api_key:
             raise ValueError("OpenAI API key is required")
-            
+
         self.s3_manager = s3_manager
         self.model = ChatOpenAI(
             openai_api_key=self.api_key,
@@ -37,21 +38,15 @@ class StoryGenerator:
         self.parser = StrOutputParser()
         self.memory = ConversationBufferWindowMemory(k=5, return_messages=True)
         self.story_id = None
-        self.fixed_prompt = None
-
+        
     async def generate_initial_story(self, genre: str) -> Dict[str, str]:
         try:
             self.story_id = str(uuid.uuid4())
             print(f"[Initial Story] Generated new story_id: {self.story_id}")
-            
-            # S3에서 랜덤 프롬프트 가져오기
-            if not self.fixed_prompt:  # 고정된 프롬프트가 없을 때만 랜덤으로 가져옴
-                self.fixed_prompt = await self.s3_manager.get_random_prompt(genre)
-                print(f"[Initial Story] Retrieved and fixed base prompt from S3")
 
-            base_prompt = self.fixed_prompt
-            print(f"[Initial Story] Using fixed prompt: {base_prompt[:50]}...") 
-            
+            base_prompt = await self.s3_manager.get_random_prompt(genre)
+            print(f"[Initial Story] Retrieved base prompt from S3")
+
             self.memory.save_context({"input": "System"}, {"output": base_prompt})
 
             system_template = (
@@ -59,7 +54,7 @@ class StoryGenerator:
                 f"{base_prompt}\n"
                 "The story should be written in Korean, maintaining proper narrative flow "
                 "and cultural context. Keep the response under 500 characters. "
-                "End with exactly 3 survival choices. Give the option to choose a character. Format: 'Story: [text]\nChoices: [1,2,3]'"
+                "End with exactly 3 survival choices. Format: 'Story: [text]\nChoices: [1,2,3]'"
             )
 
             prompt_template = ChatPromptTemplate.from_template(system_template)
@@ -76,7 +71,7 @@ class StoryGenerator:
                 print("[Initial Story] ERROR: Invalid response format")
                 print(f"Raw response: {result}")
                 raise ValueError("Invalid story format: missing Story or Choices section")
-            
+
             # Story와 Choices 분리
             parts = result.split("\nChoices:")
             story = parts[0].replace("Story:", "").strip()
@@ -84,7 +79,7 @@ class StoryGenerator:
             choices = [choice.strip() for choice in choices]
 
             self.memory.save_context({"input": "Story begins"}, {"output": result})
-            
+
             return {
                 "story": story,
                 "choices": choices,
@@ -107,31 +102,48 @@ class StoryGenerator:
                 self.story_id = str(uuid.uuid4())
                 print(f"[Continue Story] Generated new story_id: {self.story_id}")
 
-            # 고정된 초기 프롬프트 사용
-            base_prompt = self.fixed_prompt
-            if not base_prompt:
-                raise Exception("Fixed prompt not found. Initial story must be generated first.")
+            # 유저의 초이스 횟수 추적 (스테이지 번호)
+            if "stage" in request:
+                current_stage = int(request["stage"])  # 현재 초이스 횟수
+            else:
+                current_stage = 1  # 기본값은 1단계
 
+            print(f"[Continue Story] Current stage (choice count): {current_stage}")
+
+            # 대화 히스토리 로드
             conversation_history = self.memory.load_memory_variables({}).get("history", [])
             print(f"[Continue Story] Current conversation history: {conversation_history}")
 
+            # 기승전결에 따른 스토리 전개 템플릿
+            stage_prompts = {
+                1: "Introduce the setting and the initial situation. Hint at the main conflict to come.",
+                2: "Develop the main conflict and build tension. Introduce challenges or obstacles.",
+                3: "Bring the conflict to a climax. The stakes should be higher, and choices more significant.",
+                4: "Reach the turning point. Present a critical moment where the user's choice defines the resolution.",
+                5: "Conclude the story. Tie up loose ends and present the final outcome based on previous choices.",
+            }
+
+            # 스테이지에 따른 프롬프트 설정
+            stage_prompt = stage_prompts.get(current_stage, stage_prompts[5])  # 기본값은 결말
+
+            # 시스템 템플릿 생성
             system_template = (
-                "You are a master storyteller continuing an ongoing narrative. "
-                "Based on the previous context and user's choice, continue the story.\n"
+                f"You are a master storyteller continuing an ongoing narrative. "
+                f"{stage_prompt}\n"
                 "Previous context: {conversation_history}\n"
-                "User input: {base_prompt}\n"
-                "Continue the story in Korean, keeping response under 500 characters. "
+                "User input: {user_input}\n"
+                "Continue the story in Korean, keeping the response under 300 characters. "
+                "Add fun elements and twists."
                 "End with exactly 3 new choices. Format: 'Story: [text]\nChoices: [1,2,3]'"
             )
 
+            # 프롬프트 템플릿 및 체인 구성
             prompt_template = ChatPromptTemplate.from_template(system_template)
             chain = prompt_template | self.model | self.parser
 
-            # 스트리밍 결과 생성
-            streaming_handler = StreamingCallbackHandler()
+            # 체인 실행
             result = await chain.ainvoke({
                 "conversation_history": conversation_history,
-                "base_prompt": base_prompt,
                 "user_input": request.get("user_choice", "")
             })
 
@@ -152,28 +164,23 @@ class StoryGenerator:
             choices = parts[1].strip("[] \n").split(",")
             choices = [choice.strip() for choice in choices]
 
+            # 메모리에 저장
             self.memory.save_context({"input": request.get("user_choice", "")}, {"output": result})
 
-            # 스트리밍 응답을 생성하기 위한 메서드
-            async def stream_story():
-                """비동기적으로 토큰을 스트리밍하며 이야기를 전달."""
-                for token in streaming_handler.get_token_buffer():
-                    yield {"story": token}  # 실시간으로 토큰을 반환
-
-            # 최종 반환
             return {
                 "story": story,
                 "choices": choices,
                 "story_id": self.story_id,
-                "streaming": stream_story()  # 클라이언트는 stream_story()로 데이터를 스트리밍받을 수 있음
+                "stage": current_stage + 1  # 다음 스테이지로 진행
             }
 
         except Exception as e:
             print(f"[Continue Story] ERROR: {str(e)}")
             print(f"[Continue Story] Error type: {type(e)}")
-            print(f"[Continue Story] Full error details: {e.__dict__}")
             raise Exception(f"Error continuing story: {str(e)}")
-    async def generate_ending_story(self, conversation_history: list) -> dict:
+
+        
+async def generate_ending_story(self, conversation_history: list) -> dict:
         """
         엔딩 스토리를 생성하는 로직
         """

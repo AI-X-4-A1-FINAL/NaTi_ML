@@ -27,12 +27,9 @@ async def generate_story_endpoint(request: StoryGenerationStartRequest):
     스토리를 생성하는 엔드포인트
     """
     try:
-        print(f"[Start Endpoint] Received request: {request}")
         response = await story_service.generate_initial_story(genre=request.genre)
-        print(f"[Start Endpoint] Generated story: {response}")
         return response
     except Exception as e:
-        print(f"[Start Endpoint] Server error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error generating story: {str(e)}")
 
 
@@ -70,5 +67,4 @@ async def generate_ending_endpoint(request: StoryEndRequest):
     except Exception as e:
         print(f"[End Endpoint] Server error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error generating ending: {str(e)}")
-
 
