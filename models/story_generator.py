@@ -98,7 +98,7 @@ class StoryGenerator:
     async def continue_story(self, request: Dict[str, str]) -> Dict[str, str]:
         try:
             print(f"[Continue Story] Received request: {request}")
-            
+
             # story_id 설정
             if "story_id" in request:
                 self.story_id = request["story_id"]
@@ -106,15 +106,15 @@ class StoryGenerator:
             elif not self.story_id:
                 self.story_id = str(uuid.uuid4())
                 print(f"[Continue Story] Generated new story_id: {self.story_id}")
-            
+
             # 고정된 초기 프롬프트 사용
             base_prompt = self.fixed_prompt
             if not base_prompt:
-                raise Exception("Fixed prompt not found. Initial story must be generated first.")   
+                raise Exception("Fixed prompt not found. Initial story must be generated first.")
 
             conversation_history = self.memory.load_memory_variables({}).get("history", [])
             print(f"[Continue Story] Current conversation history: {conversation_history}")
-            
+
             system_template = (
                 "You are a master storyteller continuing an ongoing narrative. "
                 "Based on the previous context and user's choice, continue the story.\n"
@@ -123,16 +123,18 @@ class StoryGenerator:
                 "Continue the story in Korean, keeping response under 500 characters. "
                 "End with exactly 3 new choices. Format: 'Story: [text]\nChoices: [1,2,3]'"
             )
-            
+
             prompt_template = ChatPromptTemplate.from_template(system_template)
             chain = prompt_template | self.model | self.parser
-            
+
+            # 스트리밍 결과 생성
+            streaming_handler = StreamingCallbackHandler()
             result = await chain.ainvoke({
                 "conversation_history": conversation_history,
-                "base_prompt": base_prompt, 
+                "base_prompt": base_prompt,
                 "user_input": request.get("user_choice", "")
             })
-            
+
             print(f"[Continue Story] Received result from LLM: {result}")
 
             if not result:
@@ -151,11 +153,19 @@ class StoryGenerator:
             choices = [choice.strip() for choice in choices]
 
             self.memory.save_context({"input": request.get("user_choice", "")}, {"output": result})
-            
+
+            # 스트리밍 응답을 생성하기 위한 메서드
+            async def stream_story():
+                """비동기적으로 토큰을 스트리밍하며 이야기를 전달."""
+                for token in streaming_handler.get_token_buffer():
+                    yield {"story": token}  # 실시간으로 토큰을 반환
+
+            # 최종 반환
             return {
                 "story": story,
                 "choices": choices,
-                "story_id": self.story_id
+                "story_id": self.story_id,
+                "streaming": stream_story()  # 클라이언트는 stream_story()로 데이터를 스트리밍받을 수 있음
             }
 
         except Exception as e:
@@ -163,7 +173,6 @@ class StoryGenerator:
             print(f"[Continue Story] Error type: {type(e)}")
             print(f"[Continue Story] Full error details: {e.__dict__}")
             raise Exception(f"Error continuing story: {str(e)}")
-        
     async def generate_ending_story(self, conversation_history: list) -> dict:
         """
         엔딩 스토리를 생성하는 로직
