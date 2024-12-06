@@ -37,13 +37,14 @@ class StoryGenerator:
         )
         self.parser = StrOutputParser()
         self.memory = ConversationBufferWindowMemory(k=5, return_messages=True)
-        self.story_id = None
+        self.game_id = None
+
+    def set_game_id(self, game_id: str):
+        """game_id 설정"""
+        self.game_id = game_id    
         
     async def generate_initial_story(self, genre: str) -> Dict[str, str]:
         try:
-            self.story_id = str(uuid.uuid4())
-            print(f"[Initial Story] Generated new story_id: {self.story_id}")
-
             base_prompt = await self.s3_manager.get_random_prompt(genre)
             print(f"[Initial Story] Retrieved base prompt from S3")
 
@@ -82,8 +83,7 @@ class StoryGenerator:
 
             return {
                 "story": story,
-                "choices": choices,
-                "story_id": self.story_id
+                "choices": choices
             }
 
         except Exception as e:
@@ -93,14 +93,6 @@ class StoryGenerator:
     async def continue_story(self, request: Dict[str, str]) -> Dict[str, str]:
         try:
             print(f"[Continue Story] Received request: {request}")
-
-            # story_id 설정
-            if "story_id" in request:
-                self.story_id = request["story_id"]
-                print(f"[Continue Story] Using story_id from request: {self.story_id}")
-            elif not self.story_id:
-                self.story_id = str(uuid.uuid4())
-                print(f"[Continue Story] Generated new story_id: {self.story_id}")
 
             # 유저의 초이스 횟수 추적 (스테이지 번호)
             if "stage" in request:
@@ -170,7 +162,6 @@ class StoryGenerator:
             return {
                 "story": story,
                 "choices": choices,
-                "story_id": self.story_id,
                 "stage": current_stage + 1  # 다음 스테이지로 진행
             }
 
