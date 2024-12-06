@@ -12,7 +12,7 @@ class S3Manager:
     def __init__(self):
         self.bucket_name = os.getenv("BUCKET_NAME")
 
-    async def get_random_prompt(self, genre: str, bucket_name: Optional[str] = None) -> str:
+    async def get_random_prompt(self, genre: str, bucket_name: Optional[str] = None) -> dict:
         bucket_name = bucket_name or self.bucket_name
         async with aioboto3.Session().client(
             "s3",
@@ -54,7 +54,13 @@ class S3Manager:
 
                 # 4. 선택한 파일 내용 가져오기
                 file_obj = await s3_client.get_object(Bucket=bucket_name, Key=random_file)
-                return (await file_obj["Body"].read()).decode("utf-8")
+                file_content = (await file_obj["Body"].read()).decode("utf-8")
+
+                # 5. 파일 이름과 내용을 함께 반환
+                return {
+                    "file_name": random_file,
+                    "content": file_content
+                }
 
             except ClientError as e:
                 raise HTTPException(status_code=500, detail=f"Error interacting with S3: {str(e)}")

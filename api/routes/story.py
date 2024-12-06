@@ -28,6 +28,7 @@ async def generate_story_endpoint(request: StoryGenerationStartRequest):
     """
     try:
         response = await story_service.generate_initial_story(genre=request.genre)
+        # print(f"라우트: {response}")  # 결과 로그
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating story: {str(e)}")
@@ -39,9 +40,9 @@ async def continue_story_endpoint(request: StoryGenerationChatRequest):
     스토리를 이어가는 엔드포인트
     """
     try:
-        print(f"[Continue Endpoint] Received request: {request}")
+        print(f"[Continue] 받은 내용: {request}")
         response = await story_service.continue_story(request)
-        print(f"[Continue Endpoint] Generated response: {response}")
+        print(f"[Continue] 만들어서 주는 내용 : {response}")
         return response
     except ValueError as e:
         print(f"[Continue Endpoint] Validation error: {str(e)}")
@@ -58,7 +59,7 @@ async def generate_ending_endpoint(request: StoryEndRequest):
     """
     try:
         print(f"[End Endpoint] Received request: {request}")
-        response = await story_service.generate_ending_story(request.story_id)
+        response = await story_service.generate_ending_story(request.game_id)
         print(f"[End Endpoint] Generated ending: {response}")
         return response
     except ValueError as e:

@@ -46,10 +46,13 @@ class StoryGenerator:
     def set_game_id(self, game_id: str):
         """game_id 설정"""
         self.game_id = game_id    
-        
     async def generate_initial_story(self, genre: str) -> Dict[str, str]:
         try:
-            base_prompt = await self.s3_manager.get_random_prompt(genre)
+            random_prompt = await self.s3_manager.get_random_prompt(genre)
+
+            base_prompt = random_prompt["content"]
+
+            file_name = random_prompt["file_name"]
 
             self.memory.save_context({"input": "System"}, {"output": base_prompt})
 
@@ -65,7 +68,6 @@ class StoryGenerator:
             chain = prompt_template | self.model | self.parser
 
             result = await chain.ainvoke({})
-
 
             if not result:
                 raise ValueError("No story generated.")
@@ -86,7 +88,8 @@ class StoryGenerator:
 
             return {
                 "story": story,
-                "choices": choices
+                "choices": choices,
+                "file_name": file_name 
             }
 
         except Exception as e:
