@@ -17,8 +17,7 @@ class StoryService:
            # result는 이미 파싱된 딕셔너리 형태
            return {
                "story": result["story"],
-               "choices": result["choices"],
-               "story_id": result["story_id"]
+               "choices": result["choices"]
            }
 
        except Exception as e:
@@ -34,7 +33,7 @@ class StoryService:
             request_dict = {
                 "genre": request.genre,
                 "user_choice": request.user_choice,
-                "story_id": request.story_id
+                "game_id": request.game_id
             }
             print(f"[Story Service] Received continue story request: {request_dict}")
 
@@ -44,8 +43,7 @@ class StoryService:
             # 결과 딕셔너리를 반환
             response = {
                 "story": result.get("story", ""),  # 결과에 스토리가 없을 경우 빈 문자열 반환
-                "choices": result.get("choices", []),  # 결과에 선택지가 없을 경우 빈 리스트 반환
-                "story_id": result.get("story_id", request.story_id)  # 반환된 story_id가 없으면 기존 요청 ID 사용
+                "choices": result.get("choices", [])  # 결과에 선택지가 없을 경우 빈 리스트 반환
             }
             print(f"[Story Service] Generated story continuation: {response}")
             return response
@@ -57,7 +55,7 @@ class StoryService:
             print(f"[Story Service] Error in continue_story: {str(e)}")
             raise Exception(f"Error continuing story: {str(e)}")
         
-    async def generate_ending_story(self, story_id: str) -> dict:
+    async def generate_ending_story(self, game_id: str) -> dict:
         """
         마지막 엔딩 스토리를 생성하는 서비스 로직
         """
@@ -67,7 +65,7 @@ class StoryService:
             if not story_history:
                 raise ValueError("No story history found for the given story_id.")
             
-            print(f"[Story Service] Generating ending for story_id: {story_id}")
+            print(f"[Story Service] Generating ending for story_id: {game_id}")
             
             # 엔딩 스토리 생성
             result = await self.story_generator.generate_ending_story(story_history)
@@ -76,7 +74,6 @@ class StoryService:
             response = {
                 "story": result.get("story", ""),
                 "choices": [],  # 엔딩이므로 선택지는 없음
-                "story_id": story_id
             }
             print(f"[Story Service] Generated ending story: {response}")
             return response
