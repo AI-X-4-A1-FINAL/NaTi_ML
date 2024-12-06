@@ -58,7 +58,7 @@ class StoryService:
             print(f"[Story Service] Error in continue_story: {str(e)}")
             raise Exception(f"Error continuing story: {str(e)}")
         
-    async def generate_ending_story(self, game_id: str) -> dict:
+    async def generate_ending_story(self, game_id: str, user_choice: str) -> dict:
         """
         마지막 엔딩 스토리를 생성하는 서비스 로직
         """
@@ -66,22 +66,32 @@ class StoryService:
             # 스토리 히스토리를 메모리에서 가져옴
             story_history = self.story_generator.memory.load_memory_variables({}).get("history", [])
             if not story_history:
-                raise ValueError("No story history found for the given game_id.")
-            
-            print(f"[Story Service] Generating ending for game_id: {game_id}")
-            
+                raise ValueError(f"No story history found for the given game_id: {game_id}.")
+
+            print(f"[Story Service] Generating ending for game_id: {game_id} with user_choice: {user_choice}")
+
+            # 마지막 유저 선택 저장
+            self.story_generator.memory.save_context(
+                {"input": user_choice},
+                {"output": f"User's final choice was: {user_choice}"}
+            )
+
             # 엔딩 스토리 생성
             result = await self.story_generator.generate_ending_story(story_history)
 
-            # 결과 반환
+            # 모델에서 반환된 값에서 필요한 데이터를 추출하여 적절히 매핑
             response = {
-                "story": result.get("story", ""),
-                "choices": [],  # 엔딩이므로 선택지는 없음
+                "story": result.get("ending_story", "No ending story generated."),
+                "survival_rate": result.get("survival_rate", 0),  # 기본값 0
                 "game_id": game_id
             }
+
             print(f"[Story Service] Generated ending story: {response}")
             return response
 
+        except ValueError as e:
+            print(f"[Story Service] Validation error: {str(e)}")
+            raise Exception(f"Validation error in generate_ending_story: {str(e)}")
         except Exception as e:
             print(f"[Story Service] Error in generate_ending_story: {str(e)}")
-            raise Exception(f"Error generating ending story: {str(e)}")    
+            raise Exception(f"Error generating ending story: {str(e)}")
