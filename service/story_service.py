@@ -37,7 +37,7 @@ class StoryService:
                 "user_choice": request.user_choice,
                 "game_id": request.game_id
             }
-            print(f"[Story Service] Received continue story request: {request_dict}")
+            # print(f"[Story Service] Received continue story request: {request_dict}")
 
             # StoryGenerator를 호출하여 결과를 반환받음
             result = await self.story_generator.continue_story(request_dict)
@@ -48,7 +48,7 @@ class StoryService:
                 "choices": result.get("choices", []),  # 결과에 선택지가 없을 경우 빈 리스트 반환
                 "game_id": result.get("game_id", request.game_id)  # 반환된 game_id 없으면 기존 요청 ID 사용
             }
-            print(f"[Story Service] Generated story continuation: {response}")
+            # print(f"[Story Service] Generated story continuation: {response}")
             return response
 
         except KeyError as e:
@@ -68,7 +68,7 @@ class StoryService:
             if not story_history:
                 raise ValueError(f"No story history found for the given game_id: {game_id}.")
 
-            print(f"[Story Service] Generating ending for game_id: {game_id} with user_choice: {user_choice}")
+            # print(f"[Story Service] Generating ending for game_id: {game_id} with user_choice: {user_choice}")
 
             # 마지막 유저 선택 저장
             self.story_generator.memory.save_context(
@@ -86,7 +86,7 @@ class StoryService:
                 "game_id": game_id
             }
 
-            print(f"[Story Service] Generated ending story: {response}")
+            # print(f"[Story Service] Generated ending story: {response}")
             return response
 
         except ValueError as e:

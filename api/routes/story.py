@@ -41,9 +41,9 @@ async def continue_story_endpoint(request: StoryGenerationChatRequest):
     스토리를 이어가는 엔드포인트
     """
     try:
-        print(f"[Continue] 받은 내용: {request}")
+        # print(f"[Continue] 받은 내용: {request}")
         response = await story_service.continue_story(request)
-        print(f"[Continue] 만들어서 주는 내용 : {response}")
+        # print(f"[Continue] 만들어서 주는 내용 : {response}")
         return response
     except ValueError as e:
         print(f"[Continue Endpoint] Validation error: {str(e)}")
@@ -59,7 +59,7 @@ async def generate_ending_endpoint(request: StoryEndRequest):
     스토리의 마지막 엔딩을 생성하는 엔드포인트
     """
     try:
-        print(f"[End Endpoint] Received request: {request}")
+        # print(f"[End Endpoint] Received request: {request}")
 
         # 대화 히스토리와 유저 선택을 기반으로 엔딩 생성
         response = await story_service.generate_ending_story(
@@ -74,7 +74,7 @@ async def generate_ending_endpoint(request: StoryEndRequest):
             "game_id": request.game_id,
             "image_url": response.get("image_url")
         }
-        print(f"[End Endpoint] Generated ending: {final_response}")
+        # print(f"[End Endpoint] Generated ending: {final_response}")
         return final_response
 
     except ValueError as e:

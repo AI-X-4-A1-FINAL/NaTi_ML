@@ -87,7 +87,7 @@ class StoryGenerator:
             self.memory.save_context({"input": "Story begins"}, {"output": result})
            
             elapsed_time = time.time() - start_time  # 소요 시간 계산
-            print(f"[Initial Story] Completed in {elapsed_time:.2f} seconds")
+            # print(f"[Initial Story] Completed in {elapsed_time:.2f} seconds")
 
             return {
                 "story": story,
@@ -146,7 +146,7 @@ class StoryGenerator:
                 "user_input": request.get("user_choice", "")
             })
 
-            print(f"[Continue Story] Received result from LLM: {result}")
+            # print(f"[Continue Story] Received result from LLM: {result}")
 
             if not result:
                 raise ValueError("No continuation generated.")
@@ -167,7 +167,7 @@ class StoryGenerator:
             self.memory.save_context({"input": request.get("user_choice", "")}, {"output": result})
             
             elapsed_time = time.time() - start_time  # 소요 시간 계산
-            print(f"[Initial Story] Completed in {elapsed_time:.2f} seconds")
+            # print(f"[Initial Story] Completed in {elapsed_time:.2f} seconds")
             return {
                 "story": story,
                 "choices": choices,
@@ -186,7 +186,7 @@ class StoryGenerator:
         """
         start_time = time.time()
         try:
-            print(f"[DEBUG] Received conversation history: {conversation_history}")
+            # print(f"[DEBUG] Received conversation history: {conversation_history}")
 
             # Step 1: HumanMessage 객체를 문자열로 변환
             conversation_text = "\n".join(
@@ -205,7 +205,7 @@ class StoryGenerator:
             summary = (
                 summary_result.get("text", "") if isinstance(summary_result, dict) else summary_result
             )
-            print(f"[Summary] {summary}")
+            # print(f"[Summary] {summary}")
 
             # Step 4: 생존율 계산
             survival_template = (
@@ -225,7 +225,7 @@ class StoryGenerator:
                 survival_rate_text = survival_rate_result.strip()
 
             survival_rate = int(survival_rate_text.replace("%", ""))  # "75" → 75
-            print(f"[Survival Rate] {survival_rate}%")
+            # print(f"[Survival Rate] {survival_rate}%")
 
             # Step 5: 엔딩 스토리 생성
             system_template = (
@@ -243,7 +243,7 @@ class StoryGenerator:
             ending_story = (
                 ending_story_result.get("text", "") if isinstance(ending_story_result, dict) else ending_story_result
             )
-            print(f"[Ending Story] Generated ending: {ending_story}")
+            # print(f"[Ending Story] Generated ending: {ending_story}")
 
             if not ending_story:
                 raise ValueError("No ending generated.")
