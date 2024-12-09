@@ -1,6 +1,5 @@
 from langchain.callbacks.base import BaseCallbackHandler
 import os
-import uuid
 from dotenv import load_dotenv
 from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
@@ -12,7 +11,7 @@ from langchain.chains.summarize import load_summarize_chain
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.schema import Document
-
+import time
 
 load_dotenv()
 
@@ -47,6 +46,7 @@ class StoryGenerator:
         """game_id 설정"""
         self.game_id = game_id    
     async def generate_initial_story(self, genre: str) -> Dict[str, str]:
+        start_time = time.time()
         try:
             random_prompt = await self.s3_manager.get_random_prompt(genre)
 
@@ -85,6 +85,9 @@ class StoryGenerator:
             choices = [choice.strip() for choice in choices]
 
             self.memory.save_context({"input": "Story begins"}, {"output": result})
+           
+            elapsed_time = time.time() - start_time  # 소요 시간 계산
+            print(f"[Initial Story] Completed in {elapsed_time:.2f} seconds")
 
             return {
                 "story": story,
@@ -97,6 +100,7 @@ class StoryGenerator:
             raise Exception(f"Error generating story: {str(e)}")
 
     async def continue_story(self, request: Dict[str, str]) -> Dict[str, str]:
+        start_time = time.time()
         try:
 
             # 유저의 초이스 횟수 추적 (스테이지 번호)
@@ -161,7 +165,9 @@ class StoryGenerator:
 
             # 메모리에 저장
             self.memory.save_context({"input": request.get("user_choice", "")}, {"output": result})
-
+            
+            elapsed_time = time.time() - start_time  # 소요 시간 계산
+            print(f"[Initial Story] Completed in {elapsed_time:.2f} seconds")
             return {
                 "story": story,
                 "choices": choices,
@@ -178,6 +184,7 @@ class StoryGenerator:
         """
         엔딩 스토리를 생성하고 생존율을 계산하는 로직
         """
+        start_time = time.time()
         try:
             print(f"[DEBUG] Received conversation history: {conversation_history}")
 
@@ -240,7 +247,8 @@ class StoryGenerator:
 
             if not ending_story:
                 raise ValueError("No ending generated.")
-
+            elapsed_time = time.time() - start_time  # 소요 시간 계산
+            print(f"[Initial Story] Completed in {elapsed_time:.2f} seconds")
             # Step 6: 결과 반환
             return {
                 "summary": summary.strip(),

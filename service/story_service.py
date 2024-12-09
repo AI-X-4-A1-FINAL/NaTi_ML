@@ -78,7 +78,7 @@ class StoryService:
 
             # 엔딩 스토리 생성
             result = await self.story_generator.generate_ending_story(story_history)
-
+            
             # 모델에서 반환된 값에서 필요한 데이터를 추출하여 적절히 매핑
             response = {
                 "story": result.get("ending_story", "No ending story generated."),

@@ -71,7 +71,8 @@ async def generate_ending_endpoint(request: StoryEndRequest):
         final_response = {
             "story": response.get("story"),
             "survival_rate": response.get("survival_rate"),
-            "game_id": request.game_id
+            "game_id": request.game_id,
+            "image_url": response.get("image_url")
         }
         print(f"[End Endpoint] Generated ending: {final_response}")
         return final_response
