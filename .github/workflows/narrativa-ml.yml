@@ -3,7 +3,7 @@ name: CI/CD for EC2 Deployment
 on:
  push:
    branches:
-     - main
+     - dev
    workflow_dispatch:  
 
 jobs:
@@ -36,7 +36,7 @@ jobs:
          BUCKET_NAME="${{ secrets.BUCKET_NAME }}"
          API_KEY="${{ secrets.API_KEY }}"
          SSH_PRIVATE_KEY="${{ secrets.EC2_PRIVATE_KEY_ML }}"
-         REPLICATE_API_TOKEN = "${{ secrets.REPLICATE_API_TOKEN}}"
+         REPLICATE_API_TOKEN = "${{ secrets.REPLICATE_API_TOKEN }}"
          EOF
 
      # 4. .env 파일을 EC2로 복사
