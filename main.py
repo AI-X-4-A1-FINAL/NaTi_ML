@@ -1,12 +1,9 @@
-# main.py
-
 from fastapi import FastAPI, Security, HTTPException
 from fastapi.security.api_key import APIKeyHeader
 from starlette.status import HTTP_403_FORBIDDEN
 from api.routes import image, story
 from fastapi.middleware.cors import CORSMiddleware
 from core.config import config
-
 
 app = FastAPI()
 

@@ -37,7 +37,7 @@ async def summarize_prompt(prompt: str, genre: str = None) -> str:
         summarized_prompt = response.choices[0].message.content
 
         # 뒤에 고정으로 나오는 프롬프트
-        style = ", cinematic photograph, explosive action, high contrast, dynamic lightning."
+        style = ".. Render this scene in a realistic style."
         
         # genre에 따라 사전 정의된 프롬프트 설정
         if genre == "Survival":

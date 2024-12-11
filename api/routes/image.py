@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from models.image_generator import generate_image_with_api
+from models.image_generator import generate_image_with_dalle
 from models.prompt_summarizer import summarize_prompt
 import openai  # OpenAI GPT API 사용
 
@@ -25,8 +25,8 @@ async def generate_image(request: ImageRequest):
         summarized_prompt = await summarize_prompt(request.prompt, genre=request.genre)
 
         # DALL·E API 호출
-        image_url = generate_image_with_api(
-            prompt=summarized_prompt, size=request.size
+        image_url = generate_image_with_dalle(
+            prompt=summarized_prompt, size=request.size, n=request.n
         )
 
         # 원본 프롬프트, 요약 프롬프트 함께 반환
