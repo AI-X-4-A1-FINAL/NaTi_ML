@@ -1,13 +1,4 @@
 # service/npc_service.py
-from typing import Dict
-from models.story_generator import StoryGenerator
-from schemas.story_class import NPCResponse, NPCChatRequest
-
-class NPCService:
-    def __init__(self, story_generator: StoryGenerator):
-        self.story_generator = story_generator
-
-    # service/npc_service.py
 
 from typing import Dict
 from models.story_generator import StoryGenerator

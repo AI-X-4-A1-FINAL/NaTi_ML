@@ -15,6 +15,7 @@ services:
         BUCKET_NAME: ${BUCKET_NAME}
         SSH_PRIVATE_KEY: ${SSH_PRIVATE_KEY}
         API_KEY: ${API_KEY}
+        REPLICATE_API_TOKEN: ${REPLICATE_API_TOKEN}
     environment:
       - CORS_ORIGINS=${CORS_ORIGINS}
       - OPENAI_KEY=${OPENAI_KEY}
@@ -26,6 +27,7 @@ services:
       - BUCKET_NAME=${BUCKET_NAME}
       - SSH_PRIVATE_KEY=${SSH_PRIVATE_KEY}
       - API_KEY=${API_KEY}
+      - REPLICATE_API_TOKEN=${REPLICATE_API_TOKEN}
     ports:
       - "8050:8050"
     volumes:

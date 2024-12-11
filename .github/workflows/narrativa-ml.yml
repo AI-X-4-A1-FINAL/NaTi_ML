@@ -36,6 +36,7 @@ jobs:
          BUCKET_NAME="${{ secrets.BUCKET_NAME }}"
          API_KEY="${{ secrets.API_KEY }}"
          SSH_PRIVATE_KEY="${{ secrets.EC2_PRIVATE_KEY_ML }}"
+         REPLICATE_API_TOKEN = "${{ secrets.REPLICATE_API_TOKEN}}"
          EOF
 
      # 4. .env 파일을 EC2로 복사
@@ -95,7 +96,8 @@ jobs:
              --build-arg AWS_REGION="${{ secrets.AWS_REGION }}" \
              --build-arg BUCKET_NAME="${{ secrets.BUCKET_NAME }}" \
              --build-arg API_KEY="${{ secrets.API_KEY }}" \
-             --build-arg SSH_PRIVATE_KEY="${{ secrets.EC2_PRIVATE_KEY_ML }}"
+             --build-arg SSH_PRIVATE_KEY="${{ secrets.EC2_PRIVATE_KEY_ML }}" \
+             --build-arg REPLICATE_API_TOKEN="${{ secrets.REPLICATE_API_TOKEN }}"
            
            docker-compose --env-file ${PROJECT_DIR}/.env down || true
            docker-compose --env-file ${PROJECT_DIR}/.env up -d
