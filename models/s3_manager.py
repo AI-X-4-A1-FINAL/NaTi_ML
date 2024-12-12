@@ -11,9 +11,14 @@ class S3Manager:  # 이름은 유지
         self.api_key = os.getenv("API_KEY")  # 환경 변수에서 API_KEY 가져오기
         self.api_url = os.getenv("PROMPT_API_URL")
 
-    async def get_random_prompt(self, genre: str) -> dict:
         if not self.api_key:
-            raise HTTPException(status_code=500, detail="API Key is not configured in environment variables.")
+            raise ValueError("API Key is missing. Check your environment variables.")
+        if not isinstance(self.api_url, str) or not self.api_url.startswith("http"):
+            raise ValueError("API URL must be a valid string starting with 'http'.")
+
+    async def get_random_prompt(self, genre: str) -> dict:
+        if not genre or not isinstance(genre, str):
+            raise ValueError("Genre must be a non-empty string.")
 
         headers = {self.api_key_name: self.api_key}
         params = {"genre": genre}
@@ -35,5 +40,7 @@ class S3Manager:  # 이름은 유지
                         "content": data.get("content", "")
                     }
 
+            except ValueError as ve:
+                raise HTTPException(status_code=500, detail=f"Value error in backend API interaction: {str(ve)}")
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Error interacting with backend API: {str(e)}")
