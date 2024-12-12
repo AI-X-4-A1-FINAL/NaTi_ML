@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-class S3Manager:  # 이름은 유지
-    def __init__(self):
+class S3Manager:  # 이름은 유지함
+    def __init__(self): 
         self.api_key_name = "X-API-Key"
         self.api_key = os.getenv("API_KEY")  # 환경 변수에서 API_KEY 가져오기
         self.api_url = os.getenv("PROMPT_API_URL")
