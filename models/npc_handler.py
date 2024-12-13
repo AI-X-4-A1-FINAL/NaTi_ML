@@ -26,7 +26,7 @@ class NPCHandler:
         try:
             story_context = f"현재 스토리: {story}\n선택지들: {', '.join(choices)}"
             
-            npc_initial_template = (
+            default_npc_template = (
                 "당신은 플레이어의 신뢰할 수 있는 길잡이입니다. 다음 상황을 바탕으로 플레이어와 대화해주세요:\n"
                 "{story_context}\n\n"
                 "규칙:\n"
@@ -38,7 +38,7 @@ class NPCHandler:
                 "6. 항상 존댓말로 작성해주세요."
             )
             
-            prompt = ChatPromptTemplate.from_template(npc_initial_template)
+            prompt = ChatPromptTemplate.from_template(default_npc_template)
             chain = prompt | self.model | self.parser
             
             greeting = await chain.ainvoke({
@@ -56,7 +56,7 @@ class NPCHandler:
             conversation_history = memory_vars.get("history", [])
             formatted_choices = "\n".join([f"선택지 {i+1}: {choice}" for i, choice in enumerate(choices)])
             
-            npc_advice_template = (
+            default_advice_template = (
                 "당신은 플레이어의 신뢰할 수 있는 조언자입니다.\n"
                 "항상 존댓말로 작성해주세요.\n"
                 "현재 상황: {story_context}\n\n"
@@ -73,7 +73,7 @@ class NPCHandler:
                 "추가 코멘트: (결과에 대한 통찰)"
             )
 
-            prompt = ChatPromptTemplate.from_template(npc_advice_template)
+            prompt = ChatPromptTemplate.from_template(default_advice_template)
             chain = prompt | self.model | self.parser
 
             response = await chain.ainvoke({

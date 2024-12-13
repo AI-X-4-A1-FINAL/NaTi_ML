@@ -124,7 +124,7 @@ class StoryGenerator:
             conversation_history = self.story_memory.load_memory_variables({}).get("history", [])
 
             # 스토리 진행 단계별 템플릿
-            stage_templates = {
+            default_stage_templates = {
                 1: "Introduce the setting and the initial situation. Hint at the main conflict to come.",
                 2: "Develop the main conflict and build tension. ",
                 3: "Bring the conflict to a climax. The stakes should be higher, and choices more significant.",
@@ -133,7 +133,7 @@ class StoryGenerator:
             }
 
 
-            stage_templates = stage_templates.get(current_stage, stage_templates[5])
+            stage_templates = default_stage_templates.get(current_stage, default_stage_templates[5])
 
             genre = request.get("genre", "Survival")
 
