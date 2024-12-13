@@ -1,3 +1,5 @@
+# models/story_generator.py
+
 from langchain.callbacks.base import BaseCallbackHandler
 import os
 from dotenv import load_dotenv
@@ -65,21 +67,23 @@ class StoryGenerator:
             self.story_memory.save_context({"input": "System"}, {"output": base_prompt})
 
             if genre == "Romance":
-                system_template = (
+                romance_initial_template = (
                     "You are a master storyteller specializing in crafting romantic narratives. "
                     f"{base_prompt}\n"
                     "The story should be written in Korean, maintaining a heartfelt tone "
                     "and focusing on the emotional journey of the characters. Keep the response under 500 characters. "
                     "End with exactly 3 romantic decisions for the protagonist. Format: 'Story: [text]\nChoices: [1,2,3]'"
                 )
+                system_template = romance_initial_template
             else:
-                system_template = (
+                survival_initial_template = (
                     "You are a master storyteller specializing in narrative creation. "
                     f"{base_prompt}\n"
                     "The story should be written in Korean, maintaining proper narrative flow "
                     "and cultural context. Keep the response under 500 characters. "
                     "End with exactly 3 survival choices. Format: 'Story: [text]\nChoices: [1,2,3]'"
                 )
+                system_template = survival_initial_template
 
             prompt_template = ChatPromptTemplate.from_template(system_template)
             chain = prompt_template | self.model | self.parser
@@ -109,6 +113,7 @@ class StoryGenerator:
         except Exception as e:
             raise Exception(f"Error generating story: {str(e)}")
 
+
     async def continue_story(self, request: Dict[str, str]) -> Dict[str, str]:
         try:
             if "stage" in request:
@@ -118,7 +123,8 @@ class StoryGenerator:
 
             conversation_history = self.story_memory.load_memory_variables({}).get("history", [])
 
-            stage_prompts = {
+            # 스토리 진행 단계별 템플릿
+            stage_templates = {
                 1: "Introduce the setting and the initial situation. Hint at the main conflict to come.",
                 2: "Develop the main conflict and build tension. ",
                 3: "Bring the conflict to a climax. The stakes should be higher, and choices more significant.",
@@ -126,30 +132,36 @@ class StoryGenerator:
                 5: "Conclude the story. Tie up loose ends and present the final outcome based on previous choices.",
             }
 
-            stage_prompt = stage_prompts.get(current_stage, stage_prompts[5])
 
-            if request.get("genre", "Survival") == "Romance":
-                system_template = (
-                    f"You are a master storyteller continuing an ongoing romantic narrative. "
-                    f"{stage_prompt}\n"
-                    "Previous context: {conversation_history}\n"
-                    "User input: {user_input}\n"
-                    "Continue the story in Korean, keeping the response under 300 characters. "
-                    "Focus on emotional depth and character relationships. "
-                    "End with exactly 3 new romantic decisions. Format: 'Story: [text]\nChoices: [1,2,3]'"
-                )
+            stage_templates = stage_templates.get(current_stage, stage_templates[5])
+
+            genre = request.get("genre", "Survival")
+
+            romance_continue_template = (
+                f"You are a master storyteller continuing an ongoing romantic narrative. "
+                f"{stage_templates}\n"
+                "Previous context: {conversation_history}\n"
+                "User input: {user_input}\n"
+                "Continue the story in Korean, keeping the response under 300 characters. "
+                "Focus on emotional depth and character relationships. "
+                "End with exactly 3 new romantic decisions. Format: 'Story: [text]\nChoices: [1,2,3]'"
+            )
+
+            survival_continue_template = (
+                f"You are a master storyteller continuing an ongoing narrative. "
+                f"{stage_templates}\n"
+                "Previous context: {conversation_history}\n"
+                "User input: {user_input}\n"
+                "Continue the story in Korean, keeping the response under 300 characters. "
+                "Add fun elements and twists. "
+                "End with exactly 3 new choices. Format: 'Story: [text]\nChoices: [1,2,3]'"
+            )
+
+            if genre == "Romance":
+                prompt_template = ChatPromptTemplate.from_template(romance_continue_template)
             else:
-                system_template = (
-                    f"You are a master storyteller continuing an ongoing narrative. "
-                    f"{stage_prompt}\n"
-                    "Previous context: {conversation_history}\n"
-                    "User input: {user_input}\n"
-                    "Continue the story in Korean, keeping the response under 300 characters. "
-                    "Add fun elements and twists."
-                    "End with exactly 3 new choices. Format: 'Story: [text]\nChoices: [1,2,3]'"
-                )
+                prompt_template = ChatPromptTemplate.from_template(survival_continue_template)
 
-            prompt_template = ChatPromptTemplate.from_template(system_template)
             chain = prompt_template | self.model | self.parser
 
             result = await chain.ainvoke({
@@ -206,19 +218,21 @@ class StoryGenerator:
             print(f"[Summary] {summary}")
 
             if genre == "Romance":
-                survival_template = (
+                romance_rate_template = (
                     "다음 요약된 대화를 바탕으로 유저의 성공 가능성을 계산하세요.\n"
                     "요약된 대화: {summary}\n"
                     "유저가 로맨스 상황에서 사랑에 성공할 확률을 %로 표현하세요. "
                     "숫자만 반환하고 이유는 설명하지 마세요."
                 )
+                survival_template = romance_rate_template
             else:
-                survival_template = (
+                survival_rate_template = (
                     "다음 요약된 대화를 바탕으로 유저의 생존율을 계산하세요.\n"
                     "요약된 대화: {summary}\n"
                     "유저가 서바이벌 상황에서 생존할 확률을 %로 표현하세요. "
                     "숫자만 반환하고 이유는 설명하지 마세요."
                 )
+                survival_template = survival_rate_template
 
             survival_prompt = PromptTemplate(input_variables=["summary"], template=survival_template)
             survival_chain = LLMChain(llm=self.model, prompt=survival_prompt)
@@ -232,21 +246,23 @@ class StoryGenerator:
             survival_rate = int(survival_rate_text.replace("%", ""))
 
             if genre == "Romance":
-                ending_template = (
+                romance_ending_template = (
                     "You are a master storyteller concluding a heartfelt romantic narrative. "
                     "Based on the conversation history provided, create an emotional and satisfying ending to the story.\n"
                     "Conversation history: {conversation_text}\n"
                     "Conclude the story in Korean, keeping the response under 500 characters. "
                     "Focus on the emotional resolution and romantic connections of the protagonists."
                 )
+                ending_template = romance_ending_template
             else:
-                ending_template = (
+                survival_ending_template = (
                     "You are a master storyteller concluding an epic narrative. "
                     "Based on the conversation history provided, create a compelling ending to the story.\n"
                     "Conversation history: {conversation_text}\n"
                     "Conclude the story in Korean, keeping the response under 500 characters. "
                     "No choices are needed, just a final closure to the narrative."
                 )
+                ending_template = survival_ending_template
 
             ending_prompt = ChatPromptTemplate.from_template(ending_template)
             ending_chain = ending_prompt | self.model | self.parser
