@@ -1,5 +1,3 @@
-# models/story_generator.py
-
 from langchain.callbacks.base import BaseCallbackHandler
 import os
 from dotenv import load_dotenv
@@ -7,12 +5,13 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain.schema.output_parser import StrOutputParser
 from langchain.memory import ConversationBufferWindowMemory
-from typing import  List, Dict, Optional, Union
+from typing import List, Dict, Optional
 from langchain.chains.summarize import load_summarize_chain
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.schema import Document
 from models.npc_handler import NPCHandler  # NPCHandler import 추가
+from functools import lru_cache
 
 load_dotenv()
 
@@ -231,7 +230,7 @@ class StoryGenerator:
                 survival_rate_text = survival_rate_result.strip()
 
             survival_rate = int(survival_rate_text.replace("%", ""))
-            
+
             if genre == "Romance":
                 ending_template = (
                     "You are a master storyteller concluding a heartfelt romantic narrative. "
@@ -256,10 +255,10 @@ class StoryGenerator:
             ending_story = (
                 ending_story_result.get("text", "") if isinstance(ending_story_result, dict) else ending_story_result
             )
-            
+
             if not ending_story:
                 raise ValueError("No ending generated.")
-            
+
             # NPC 마지막 코멘트
             final_npc_comment = "이야기가 끝났네요. 당신의 선택에 따라 모든 것이 달라졌습니다."
 
@@ -272,3 +271,7 @@ class StoryGenerator:
         except Exception as e:
             print(f"[Ending Story ERROR] {str(e)}")
             raise Exception(f"Error generating ending story: {str(e)}")
+
+@lru_cache()
+def get_story_generator(api_key: Optional[str] = None, s3_manager=None) -> StoryGenerator:
+    return StoryGenerator(api_key=api_key, s3_manager=s3_manager)
