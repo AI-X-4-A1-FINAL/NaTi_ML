@@ -57,7 +57,6 @@ class StoryGenerator:
             "additional_comment": npc_response.get("additional_comment")
         }
 
-
     async def generate_initial_story(self, genre: str) -> Dict[str, str]:
         try:
             random_prompt = await self.s3_manager.get_random_prompt(genre)
@@ -66,13 +65,22 @@ class StoryGenerator:
 
             self.story_memory.save_context({"input": "System"}, {"output": base_prompt})
 
-            system_template = (
-                "You are a master storyteller specializing in narrative creation. "
-                f"{base_prompt}\n"
-                "The story should be written in Korean, maintaining proper narrative flow "
-                "and cultural context. Keep the response under 500 characters. "
-                "End with exactly 3 survival choices. Format: 'Story: [text]\nChoices: [1,2,3]'"
-            )
+            if genre == "Romance":
+                system_template = (
+                    "You are a master storyteller specializing in crafting romantic narratives. "
+                    f"{base_prompt}\n"
+                    "The story should be written in Korean, maintaining a heartfelt tone "
+                    "and focusing on the emotional journey of the characters. Keep the response under 500 characters. "
+                    "End with exactly 3 romantic decisions for the protagonist. Format: 'Story: [text]\nChoices: [1,2,3]'"
+                )
+            else:
+                system_template = (
+                    "You are a master storyteller specializing in narrative creation. "
+                    f"{base_prompt}\n"
+                    "The story should be written in Korean, maintaining proper narrative flow "
+                    "and cultural context. Keep the response under 500 characters. "
+                    "End with exactly 3 survival choices. Format: 'Story: [text]\nChoices: [1,2,3]'"
+                )
 
             prompt_template = ChatPromptTemplate.from_template(system_template)
             chain = prompt_template | self.model | self.parser
@@ -121,15 +129,26 @@ class StoryGenerator:
 
             stage_prompt = stage_prompts.get(current_stage, stage_prompts[5])
 
-            system_template = (
-                f"You are a master storyteller continuing an ongoing narrative. "
-                f"{stage_prompt}\n"
-                "Previous context: {conversation_history}\n"
-                "User input: {user_input}\n"
-                "Continue the story in Korean, keeping the response under 300 characters. "
-                "Add fun elements and twists."
-                "End with exactly 3 new choices. Format: 'Story: [text]\nChoices: [1,2,3]'"
-            )
+            if request.get("genre", "Survival") == "Romance":
+                system_template = (
+                    f"You are a master storyteller continuing an ongoing romantic narrative. "
+                    f"{stage_prompt}\n"
+                    "Previous context: {conversation_history}\n"
+                    "User input: {user_input}\n"
+                    "Continue the story in Korean, keeping the response under 300 characters. "
+                    "Focus on emotional depth and character relationships. "
+                    "End with exactly 3 new romantic decisions. Format: 'Story: [text]\nChoices: [1,2,3]'"
+                )
+            else:
+                system_template = (
+                    f"You are a master storyteller continuing an ongoing narrative. "
+                    f"{stage_prompt}\n"
+                    "Previous context: {conversation_history}\n"
+                    "User input: {user_input}\n"
+                    "Continue the story in Korean, keeping the response under 300 characters. "
+                    "Add fun elements and twists."
+                    "End with exactly 3 new choices. Format: 'Story: [text]\nChoices: [1,2,3]'"
+                )
 
             prompt_template = ChatPromptTemplate.from_template(system_template)
             chain = prompt_template | self.model | self.parser
@@ -167,7 +186,7 @@ class StoryGenerator:
             print(f"[Continue Story] Error type: {type(e)}")
             raise Exception(f"Error continuing story: {str(e)}")
 
-    async def generate_ending_story(self, conversation_history: list) -> dict:
+    async def generate_ending_story(self, conversation_history: list, genre: str = "Survival") -> dict:
         """엔딩 스토리 생성 및 생존율 계산"""
         try:
             print(f"[DEBUG] Received conversation history: {conversation_history}")
@@ -187,12 +206,21 @@ class StoryGenerator:
             )
             print(f"[Summary] {summary}")
 
-            survival_template = (
-                "다음 요약된 대화를 바탕으로 유저의 생존율을 계산하세요.\n"
-                "요약된 대화: {summary}\n"
-                "유저가 서바이벌 상황에서 생존할 확률을 %로 표현하세요. "
-                "숫자만 반환하고 이유는 설명하지 마세요."
-            )
+            if genre == "Romance":
+                survival_template = (
+                    "다음 요약된 대화를 바탕으로 유저의 성공 가능성을 계산하세요.\n"
+                    "요약된 대화: {summary}\n"
+                    "유저가 로맨스 상황에서 사랑에 성공할 확률을 %로 표현하세요. "
+                    "숫자만 반환하고 이유는 설명하지 마세요."
+                )
+            else:
+                survival_template = (
+                    "다음 요약된 대화를 바탕으로 유저의 생존율을 계산하세요.\n"
+                    "요약된 대화: {summary}\n"
+                    "유저가 서바이벌 상황에서 생존할 확률을 %로 표현하세요. "
+                    "숫자만 반환하고 이유는 설명하지 마세요."
+                )
+
             survival_prompt = PromptTemplate(input_variables=["summary"], template=survival_template)
             survival_chain = LLMChain(llm=self.model, prompt=survival_prompt)
             survival_rate_result = await survival_chain.ainvoke({"summary": summary})
@@ -204,14 +232,23 @@ class StoryGenerator:
 
             survival_rate = int(survival_rate_text.replace("%", ""))
             
+            if genre == "Romance":
+                ending_template = (
+                    "You are a master storyteller concluding a heartfelt romantic narrative. "
+                    "Based on the conversation history provided, create an emotional and satisfying ending to the story.\n"
+                    "Conversation history: {conversation_text}\n"
+                    "Conclude the story in Korean, keeping the response under 500 characters. "
+                    "Focus on the emotional resolution and romantic connections of the protagonists."
+                )
+            else:
+                ending_template = (
+                    "You are a master storyteller concluding an epic narrative. "
+                    "Based on the conversation history provided, create a compelling ending to the story.\n"
+                    "Conversation history: {conversation_text}\n"
+                    "Conclude the story in Korean, keeping the response under 500 characters. "
+                    "No choices are needed, just a final closure to the narrative."
+                )
 
-            ending_template = (
-                "You are a master storyteller concluding an epic narrative. "
-                "Based on the conversation history provided, create a compelling ending to the story.\n"
-                "Conversation history: {conversation_text}\n"
-                "Conclude the story in Korean, keeping the response under 500 characters. "
-                "No choices are needed, just a final closure to the narrative."
-            )
             ending_prompt = ChatPromptTemplate.from_template(ending_template)
             ending_chain = ending_prompt | self.model | self.parser
             ending_story_result = await ending_chain.ainvoke({"conversation_text": conversation_text})
@@ -220,7 +257,6 @@ class StoryGenerator:
                 ending_story_result.get("text", "") if isinstance(ending_story_result, dict) else ending_story_result
             )
             
-
             if not ending_story:
                 raise ValueError("No ending generated.")
             

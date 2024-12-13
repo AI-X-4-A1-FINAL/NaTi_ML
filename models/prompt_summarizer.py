@@ -48,6 +48,11 @@ async def summarize_prompt(prompt: str, genre: str = None) -> str:
             newPrompt = "Post-apocalyptic scene with abandoned streets and hordes of zombies." + summarized_prompt + style
         elif genre == "외계인":
             newPrompt = "Surreal dreamscape with floating islands and impossible architecture. " + summarized_prompt + style
+        elif genre == "Romance":
+            newPrompt = (
+                "very Lovely atmosphere with a male and female protagonist, both adults, "
+                "and a setting full of romantic charm and love. " + summarized_prompt + style
+            )
         else:
             # 장르가 정의되지 않으면 원본 프롬프트 그대로 사용
             newPrompt = summarized_prompt + " " + style
