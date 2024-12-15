@@ -17,6 +17,7 @@ services:
         API_KEY: ${API_KEY}
         REPLICATE_API_TOKEN: ${REPLICATE_API_TOKEN}
         PROMPT_API_URL: ${PROMPT_API_URL}
+        BACK_BASE_URL: ${BACK_BASE_URL}
     environment:
       - CORS_ORIGINS=${CORS_ORIGINS}
       - OPENAI_KEY=${OPENAI_KEY}
@@ -30,6 +31,7 @@ services:
       - API_KEY=${API_KEY}
       - REPLICATE_API_TOKEN=${REPLICATE_API_TOKEN}
       - PROMPT_API_URL=${PROMPT_API_URL}
+      - BACK_BASE_URL=${BACK_BASE_URL}
     ports:
       - "8050:8050"
     volumes:

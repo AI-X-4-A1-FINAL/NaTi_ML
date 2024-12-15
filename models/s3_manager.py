@@ -11,7 +11,7 @@ class S3Manager:
     def __init__(self): 
         self.api_key_name = "X-API-Key"
         self.api_key = os.getenv("API_KEY")
-        self.api_url = os.getenv("CORS_ORIGINS")
+        self.api_url = os.getenv("BACK_BASE_URL")
 
         if not self.api_key:
             raise ValueError("API Key is missing. Check your environment variables.")
