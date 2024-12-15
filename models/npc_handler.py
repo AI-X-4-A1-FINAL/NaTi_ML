@@ -17,22 +17,22 @@ class NPCHandler:
         )
         self.parser = StrOutputParser()
         self.memory = ConversationBufferWindowMemory(k=5, return_messages=True)
-        self.current_context = ""
-        self.last_choice = None
 
-    async def generate_greeting(self, story: str, choices: List[str]) -> str:
+    async def generate_greeting(self, story_context: str, choices: List[str] = None) -> str:
         """NPC 초기 인사말 생성"""
         try:
-            story_context = f"현재 스토리: {story}\n선택지들: {', '.join(choices)}"
+            # story_context와 선택지를 템플릿에 반영
+            if choices:
+                story_context += f"\n선택지: {', '.join(choices)}"
             
-            default_npc_template = get_default_npc_template()
-            prompt = ChatPromptTemplate.from_template(default_npc_template)
+            npc_template = await get_default_npc_template(story_context=story_context)
+            prompt = ChatPromptTemplate.from_template(npc_template)
             chain = prompt | self.model | self.parser
-            
+
             greeting = await chain.ainvoke({
                 "story_context": story_context
             })
-            
+
             return greeting
         except Exception as e:
             raise Exception(f"Error generating NPC greeting: {str(e)}")
@@ -40,24 +40,31 @@ class NPCHandler:
     async def provide_advice(self, story_context: str, choices: List[str]) -> Dict:
         """NPC 조언 및 생존율 제공"""
         try:
+            # 대화 기록과 선택지 포맷
             memory_vars = self.memory.load_memory_variables({})
             conversation_history = memory_vars.get("history", [])
+            conversation_text = "\n".join(str(msg) for msg in conversation_history)
             formatted_choices = "\n".join([f"선택지 {i+1}: {choice}" for i, choice in enumerate(choices)])
-            
-            default_advice_template = get_default_advice_template()
-            prompt = ChatPromptTemplate.from_template(default_advice_template)
+
+            # 매개변수를 전달하여 Advice 템플릿 생성
+            advice_template = await get_default_advice_template(
+                story_context=story_context,
+                conversation_history=conversation_text,
+                choices=formatted_choices
+            )
+            prompt = ChatPromptTemplate.from_template(advice_template)
             chain = prompt | self.model | self.parser
 
             response = await chain.ainvoke({
                 "story_context": story_context,
-                "conversation_history": "\n".join(str(msg) for msg in conversation_history),
+                "conversation_history": conversation_text,
                 "choices": formatted_choices
             })
 
             response_data = {}
             lines = response.strip().split("\n")
             additional_comment = ""
-            
+
             for line in lines:
                 if line.startswith("추가 코멘트:"):
                     additional_comment = line.replace("추가 코멘트:", "").strip()
@@ -68,12 +75,13 @@ class NPCHandler:
                     content = line.split("=")[1]
                     advice, survival = content.split("|")
                     survival_rate = int(''.join(filter(str.isdigit, survival)))
-                    
+
                     response_data[f"additionalProp{choice_num}"] = {
                         "advice": advice.strip(),
                         "survival_rate": survival_rate
                     }
 
+            # 대화 메모리에 저장
             self.memory.save_context(
                 {"input": formatted_choices},
                 {"output": response}
@@ -86,7 +94,3 @@ class NPCHandler:
 
         except Exception as e:
             raise Exception(f"Error generating NPC advice: {str(e)}")
-
-    def get_final_message(self) -> str:
-        """NPC 마지막 메시지"""
-        return "이야기가 끝났네요. 당신의 선택에 따라 모든 것이 달라졌습니다."
