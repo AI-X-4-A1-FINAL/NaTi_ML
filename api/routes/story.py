@@ -1,3 +1,5 @@
+# api/routes/story.py
+
 from fastapi import APIRouter, HTTPException, Depends
 from schemas.story_class import (
     StoryGenerationStartRequest,

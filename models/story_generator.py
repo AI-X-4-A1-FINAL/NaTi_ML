@@ -126,7 +126,7 @@ class StoryGenerator:
     async def continue_story(self, request: Dict[str, str]) -> Dict[str, str]:
         try:
             current_stage = int(request.get("stage", 1))
-            user_choice = request.get("user_choice", "")
+            user_choice = request.get("user_choice", "") 
 
             # 대화 메모리에서 이전 스토리 불러오기
             conversation_history = self.story_memory.load_memory_variables({}).get("history", [])
@@ -167,7 +167,7 @@ class StoryGenerator:
             # LLM 호출
             result = await chain.ainvoke({
                 "previous_story": previous_story,
-                "user_choice": user_choice,  # 변수 이름을 user_choice로 전달
+                "user_choice": user_choice,  
                 "stage_template": stage_template
             })
 

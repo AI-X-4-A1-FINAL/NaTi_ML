@@ -1,3 +1,5 @@
+# models/npc_handler.py
+
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI

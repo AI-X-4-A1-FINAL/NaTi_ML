@@ -5,14 +5,15 @@ from typing import List, Dict, Optional, Union
 
 class ChoiceAdvice(BaseModel):
     advice: str
-    survival_rate: int
+    survival_rate: int  # spring에서 JsonProperty로 매핑
 
 class StoryGenerationStartRequest(BaseModel):
     genre: str = Field(..., description="Story genre")
+    tags: List[str] = Field(default=list(), description="Story tags")
 
 class StoryGenerationChatRequest(BaseModel):
     genre: str = Field(..., description="Story genre")
-    user_choice: str = Field(..., description="User's selected choice (1, 2, or 3)")
+    user_choice: str = Field(..., description="User's selected choice")  # user_select -> user_choice
     game_id: str = Field(..., description="Story session ID")
 
 class NPCChatRequest(BaseModel):
@@ -21,7 +22,7 @@ class NPCChatRequest(BaseModel):
 class StoryResponse(BaseModel):
     story: str = Field(..., description="Generated story text")
     choices: List[str] = Field(..., description="Available choices")
-
+    file_name: Optional[str] = Field(None, description="File name")
 
 class NPCResponse(BaseModel):
     response: Dict[str, ChoiceAdvice]
@@ -30,6 +31,7 @@ class NPCResponse(BaseModel):
 
 class StoryEndRequest(BaseModel):
     game_id: str = Field(..., description="Game session ID")
+    genre: str = Field(..., description="Story genre")
     user_choice: str = Field(..., description="User's final choice")
 
 class StoryEndResponse(BaseModel):
