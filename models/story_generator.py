@@ -52,22 +52,33 @@ class StoryGenerator:
         self.story_memory = ConversationBufferWindowMemory(k=5, return_messages=True)
         self.game_id = None
 
+     # NPCHandler 초기화
+        self.npc_handler = NPCHandler(api_key=self.api_key)
+
     def set_game_id(self, game_id: str):
         """game_id 설정"""
         self.game_id = game_id
 
     async def initialize_npc(self, story_context: str) -> str:
         """NPC 초기 인사말 생성"""
-        return await self.npc_handler.generate_greeting(story_context)
+        try:
+            return await self.npc_handler.generate_greeting(story_context)
+        except Exception as e:
+            print(f"[ERROR] Failed to initialize NPC: {e}")
+            raise
 
     async def chat_with_npc(self, story_context: str, choices: List[str]) -> Dict:
         """NPC 조언 및 생존율 얻기"""
-        npc_response = await self.npc_handler.provide_advice(story_context, choices)
-        return {
-            "response": npc_response["response"],
-            "game_id": self.game_id or "default_id",
-            "additional_comment": npc_response.get("additional_comment")
-        }
+        try:
+            npc_response = await self.npc_handler.provide_advice(story_context, choices)
+            return {
+                "response": npc_response["response"],
+                "game_id": self.game_id or "default_id",
+                "additional_comment": npc_response.get("additional_comment")
+            }
+        except Exception as e:
+            print(f"[ERROR] Failed to chat with NPC: {e}")
+            raise
 
     async def generate_initial_story(self, genre: str) -> Dict[str, str]:
         try:

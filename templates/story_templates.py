@@ -23,11 +23,24 @@ class StoryTemplates:
 _templates = StoryTemplates()
 
 # 외부에서 사용할 비동기 함수들
-async def get_default_npc_template() -> str:
-    return await _templates.get_template("default", "npc")
+async def get_default_npc_template(story_context: str) -> str:
+    """
+    기본 NPC 템플릿을 story_context로 포맷하여 반환
+    """
+    template = await _templates.get_template("default", "npc")
+    return template.format(story_context=story_context)
 
-async def get_default_advice_template() -> str:
-    return await _templates.get_template("default", "advice")
+
+async def get_default_advice_template(story_context: str, conversation_history: str, choices: str) -> str:
+    """
+    기본 Advice 템플릿을 story_context, conversation_history, choices로 포맷하여 반환
+    """
+    template = await _templates.get_template("default", "advice")
+    return template.format(
+        story_context=story_context,
+        conversation_history=conversation_history,
+        choices=choices
+    )
 
 async def get_romance_initial_template(base_prompt: str) -> str:
     return await _templates.get_template("romance", "initial", base_prompt)
