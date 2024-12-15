@@ -1,3 +1,5 @@
+# models/npc_handler.py
+
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
@@ -25,7 +27,7 @@ class NPCHandler:
         try:
             story_context = f"현재 스토리: {story}\n선택지들: {', '.join(choices)}"
             
-            default_npc_template = get_default_npc_template()
+            default_npc_template = await get_default_npc_template()
             prompt = ChatPromptTemplate.from_template(default_npc_template)
             chain = prompt | self.model | self.parser
             
@@ -42,15 +44,16 @@ class NPCHandler:
         try:
             memory_vars = self.memory.load_memory_variables({})
             conversation_history = memory_vars.get("history", [])
+            conversation_text = "\n".join(str(msg) for msg in conversation_history)
             formatted_choices = "\n".join([f"선택지 {i+1}: {choice}" for i, choice in enumerate(choices)])
             
-            default_advice_template = get_default_advice_template()
+            default_advice_template = await get_default_advice_template()
             prompt = ChatPromptTemplate.from_template(default_advice_template)
             chain = prompt | self.model | self.parser
 
             response = await chain.ainvoke({
                 "story_context": story_context,
-                "conversation_history": "\n".join(str(msg) for msg in conversation_history),
+                "conversation_history": conversation_text,
                 "choices": formatted_choices
             })
 
