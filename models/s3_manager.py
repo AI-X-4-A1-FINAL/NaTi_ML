@@ -1,68 +1,83 @@
+#models/s3_manager.py
+
+import aiohttp
 import os
-import random
-from typing import Optional
 from fastapi import HTTPException
-import aioboto3
-from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 
 load_dotenv()
 
 class S3Manager:
-    def __init__(self):
-        self.bucket_name = os.getenv("BUCKET_NAME")
+    def __init__(self): 
+        self.api_key_name = "X-API-Key"
+        self.api_key = os.getenv("API_KEY")
+        self.api_url = os.getenv("BACK_BASE_URL")
 
-    async def get_random_prompt(self, genre: str, bucket_name: Optional[str] = None) -> dict:
-        bucket_name = bucket_name or self.bucket_name
-        async with aioboto3.Session().client(
-            "s3",
-            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-            region_name=os.getenv("AWS_REGION"),
-        ) as s3_client:
+        if not self.api_key:
+            raise ValueError("API Key is missing. Check your environment variables.")
+        if not isinstance(self.api_url, str) or not self.api_url.startswith("http"):
+            raise ValueError("API URL must be a valid string starting with 'http'.")
+
+    async def get_random_prompt(self, genre: str) -> dict:
+        """랜덤 프롬프트 가져오기"""
+        if not genre or not isinstance(genre, str):
+            raise ValueError("Genre must be a non-empty string.")
+
+        headers = {self.api_key_name: self.api_key}
+        url = f"{self.api_url}/api/admin/prompts/random"
+        params = {"genre": genre}
+
+        async with aiohttp.ClientSession() as session:
             try:
-                # 1. S3 객체 목록 가져오기
-                response = await s3_client.list_objects_v2(Bucket=bucket_name)
-                if "Contents" not in response or not response["Contents"]:
-                    raise HTTPException(status_code=404, detail="No files found in the bucket")
-
-                # 2. 태그가 일치하는 객체 필터링
-                matching_files = []
-                for obj in response["Contents"]:
-                    object_key = obj["Key"]
-
-                    # 객체 태그 가져오기
-                    try:
-                        tag_response = await s3_client.get_object_tagging(
-                            Bucket=bucket_name,
-                            Key=object_key
+                async with session.get(url, headers=headers, params=params) as response:
+                    if response.status != 200:
+                        raise HTTPException(
+                            status_code=response.status,
+                            detail=f"Failed to fetch prompt: {await response.text()}"
                         )
-                        tags = tag_response.get("TagSet", [])
+                    
+                    try:
+                        data = await response.json()
+                    except Exception as json_error:
+                        raise HTTPException(
+                            status_code=500,
+                            detail=f"Failed to parse JSON response: {str(json_error)}"
+                        )
 
-                        # 태그가 genre=survival인 객체 필터링
-                        if any(tag["Key"] == "genre" and tag["Value"] == genre for tag in tags):
-                            matching_files.append(object_key)
-                    except ClientError as e:
-                        print(f"Error fetching tags for {object_key}: {e}")
-                        continue
+                    return {
+                        "file_name": data.get("file_name", "Unknown"),
+                        "content": data.get("content", "")
+                    }
 
-                if not matching_files:
-                    raise HTTPException(status_code=404, detail=f"No files with tag genre={genre} found")
-
-                # 3. 랜덤 파일 선택
-                random_file = random.choice(matching_files)
-
-                # 4. 선택한 파일 내용 가져오기
-                file_obj = await s3_client.get_object(Bucket=bucket_name, Key=random_file)
-                file_content = (await file_obj["Body"].read()).decode("utf-8")
-
-                # 5. 파일 이름과 내용을 함께 반환
-                return {
-                    "file_name": random_file,
-                    "content": file_content
-                }
-
-            except ClientError as e:
-                raise HTTPException(status_code=500, detail=f"Error interacting with S3: {str(e)}")
+            except ValueError as ve:
+                raise HTTPException(status_code=500, detail=f"Value error in backend API interaction: {str(ve)}")
             except Exception as e:
-                raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Error interacting with backend API: {str(e)}")
+    
+    async def get_genre_type_template(self, genre: str, template_type: str) -> dict:
+        """백엔드에서 특정 장르와 타입의 템플릿 가져오기"""
+        if not genre or not template_type:
+            raise ValueError("Genre and template_type must be non-empty strings.")
+
+        url = f"{self.api_url}/api/templates/{genre}/{template_type}"
+        headers = {self.api_key_name: self.api_key}
+
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(url, headers=headers) as response:
+                    if response.status != 200:
+                        raise HTTPException(
+                            status_code=response.status,
+                            detail=f"Failed to fetch template: {await response.text()}"
+                        )
+                    
+                    try:
+                        return await response.json()
+                    except Exception as json_error:
+                        raise HTTPException(
+                            status_code=500,
+                            detail=f"Failed to parse JSON response: {str(json_error)}"
+                        )
+
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Error fetching template: {str(e)}")
