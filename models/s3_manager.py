@@ -24,7 +24,7 @@ class S3Manager:
             raise ValueError("Genre must be a non-empty string.")
 
         headers = {self.api_key_name: self.api_key}
-        url = f"{self.api_url}/api/prompts/random"
+        url = f"{self.api_url}/api/admin/prompts/random"
         params = {"genre": genre}
 
         async with aiohttp.ClientSession() as session:
