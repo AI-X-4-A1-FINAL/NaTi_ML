@@ -40,6 +40,7 @@ async def summarize_prompt(prompt: str, genre: str = None) -> str:
 
         # 뒤에 고정으로 나오는 프롬프트
         style = ", cinematic photograph, explosive action, high contrast, dynamic lightning."
+        style_Romance =", Japanese Anime style. webtoon photograph"
         
         # genre에 따라 사전 정의된 프롬프트 설정
         if genre == "Survival":
@@ -50,12 +51,11 @@ async def summarize_prompt(prompt: str, genre: str = None) -> str:
             newPrompt = "Surreal dreamscape with floating islands and impossible architecture. " + summarized_prompt + style
         elif genre == "Romance":
             newPrompt = (
-                "very Lovely atmosphere with a male and female protagonist, both adults, "
-                "and a setting full of romantic charm and love. " + summarized_prompt + style
+                "male and female love. both adults, " + summarized_prompt + style_Romance
             )
         else:
             # 장르가 정의되지 않으면 원본 프롬프트 그대로 사용
-            newPrompt = summarized_prompt + " " + style
+            newPrompt = summarized_prompt + " "
 
         # 최종적으로 새로운 프롬프트 반환
         return newPrompt
