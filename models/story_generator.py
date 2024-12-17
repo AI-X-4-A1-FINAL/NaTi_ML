@@ -122,7 +122,6 @@ class StoryGenerator:
         except Exception as e:
             raise Exception(f"Error generating story: {str(e)}")
 
-
     async def continue_story(self, request: Dict[str, str]) -> Dict[str, str]:
         try:
             current_stage = int(request.get("stage", 1))
@@ -207,8 +206,6 @@ class StoryGenerator:
         except Exception as e:
             print(f"[Continue Story] ERROR: {str(e)}")
             raise Exception(f"Error continuing story: {str(e)}")
-
-
 
     async def generate_ending_story(self, conversation_history: list, genre: str = "Survival") -> dict:
         """엔딩 스토리 생성 및 생존율 계산"""
@@ -309,8 +306,6 @@ class StoryGenerator:
                 "ending_story": "예기치 못한 상황으로 인해 엔딩을 생성하지 못했습니다.",
                 "npc_final_message": "이야기가 끝났네요. 당신의 선택에 따라 모든 것이 달라졌습니다."
             }
-
-
 
 @lru_cache()
 def get_story_generator(api_key: Optional[str] = None, s3_manager=None) -> StoryGenerator:

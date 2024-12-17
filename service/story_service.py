@@ -33,7 +33,8 @@ class StoryService:
             request_dict = {
                 "genre": request.genre,
                 "user_choice": request.user_choice,
-                "game_id": request.game_id
+                "game_id": request.game_id,
+                "stage": request.stage
             }
             print(f"[Story Service] Received continue story request: {request_dict}")
 
@@ -42,7 +43,8 @@ class StoryService:
             response = {
                 "story": result.get("story", ""),
                 "choices": result.get("choices", []),
-                "game_id": result.get("game_id", request.game_id)
+                "game_id": result.get("game_id", request.game_id),
+                "stage": result.get("stage", request.stage)
             }
             print(f"[Story Service] Generated story continuation: {response}")
             return response

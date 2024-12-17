@@ -15,6 +15,7 @@ class StoryGenerationChatRequest(BaseModel):
     genre: str = Field(..., description="Story genre")
     user_choice: str = Field(..., description="User's selected choice")  # user_select -> user_choice
     game_id: str = Field(..., description="Story session ID")
+    stage: Optional[int] = Field(None, description="Current story stage")  # stage 필드 추가
 
 class NPCChatRequest(BaseModel):
     game_id: str = Field(..., description="Game session ID")
